@@ -1,6 +1,8 @@
 package wallet
 
-import "context"
+import (
+	"context"
+)
 
 type Service interface {
 	Create(context.Context, *CreateWalletDTO) (*Wallet, error)

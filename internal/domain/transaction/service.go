@@ -1,6 +1,8 @@
 package transaction
 
-import "context"
+import (
+	"context"
+)
 
 type Service interface {
 	Create(context.Context, *CreateTransactionDTO) (*Transaction, error)

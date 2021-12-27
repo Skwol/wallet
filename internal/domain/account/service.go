@@ -1,9 +1,11 @@
 package account
 
-import "context"
+import (
+	"context"
+)
 
 type Service interface {
-	Create(context.Context, *Account) (*Account, error)
+	Create(context.Context, *CreateAccountDTO) (*Account, error)
 	GetByID(context.Context, int64) (*Account, error)
 	GetAll(ctx context.Context, limit int, offset int) ([]*Account, error)
 }
@@ -16,7 +18,7 @@ func NewService(storage Storage) Service {
 	return &service{storage: storage}
 }
 
-func (s *service) Create(context.Context, *Account) (*Account, error) {
+func (s *service) Create(context.Context, *CreateAccountDTO) (*Account, error) {
 	return nil, nil
 }
 
