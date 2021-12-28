@@ -4,12 +4,15 @@ import (
 	"context"
 
 	"github.com/skwol/wallet/internal/domain/wallet"
+	"github.com/skwol/wallet/pkg/client/pgdb"
 )
 
-type walletStorage struct{}
+type walletStorage struct {
+	db *pgdb.PGDB
+}
 
-func NewStorage() wallet.Storage {
-	return &walletStorage{}
+func NewStorage(db *pgdb.PGDB) (wallet.Storage, error) {
+	return &walletStorage{db: db}, nil
 }
 
 func (as *walletStorage) Create(ctx context.Context, acct *wallet.Wallet) (*wallet.Wallet, error) {

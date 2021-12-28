@@ -14,8 +14,8 @@ type service struct {
 	storage Storage
 }
 
-func NewService(storage Storage) Service {
-	return &service{storage: storage}
+func NewService(storage Storage) (Service, error) {
+	return &service{storage: storage}, nil
 }
 
 func (s *service) Create(context.Context, *CreateTransactionDTO) (*Transaction, error) {

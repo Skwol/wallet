@@ -3,6 +3,9 @@ package pgdb
 import (
 	"database/sql"
 	"fmt"
+	"os"
+
+	_ "github.com/lib/pq"
 )
 
 const (
@@ -14,8 +17,11 @@ type PGDB struct {
 	Conn *sql.DB
 }
 
-func NewClient(username, password, database string) (*PGDB, error) {
+func NewClient() (*PGDB, error) {
 	db := &PGDB{}
+	username := os.Getenv("POSTGRES_USER")
+	password := os.Getenv("POSTGRES_PASSWORD")
+	database := os.Getenv("POSTGRES_DB_PROD")
 	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
 		HOST, PORT, username, password, database)
 	conn, err := sql.Open("postgres", dsn)

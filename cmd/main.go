@@ -1,27 +1,61 @@
 package main
 
 import (
-	handleraccount "github.com/skwol/wallet/internal/adapters/api/account"
-	handlertransaction "github.com/skwol/wallet/internal/adapters/api/transaction"
-	handlerwallet "github.com/skwol/wallet/internal/adapters/api/wallet"
-	dbacct "github.com/skwol/wallet/internal/adapters/db/account"
-	dbtransaction "github.com/skwol/wallet/internal/adapters/db/transaction"
-	dbwallet "github.com/skwol/wallet/internal/adapters/db/wallet"
-	domainacct "github.com/skwol/wallet/internal/domain/account"
-	domaintransaction "github.com/skwol/wallet/internal/domain/transaction"
-	domainwallet "github.com/skwol/wallet/internal/domain/wallet"
+	"context"
+	"net"
+	"net/http"
+	"time"
+
+	"github.com/gorilla/mux"
+	"github.com/skwol/wallet/internal/composites"
+	"github.com/skwol/wallet/pkg/logging"
 )
 
 func main() {
-	accountStorage := dbacct.NewStorage()
-	accountService := domainacct.NewService(accountStorage)
-	accountHandler := handleraccount.NewHandler(accountService)
+	logging.Init()
+	logger := logging.GetLogger()
+	ctx := context.Background()
 
-	transactionStorage := dbtransaction.NewStorage()
-	transactionService := domaintransaction.NewService(transactionStorage)
-	transactionHandler := handlertransaction.NewHandler(transactionService)
+	logger.Info("router initialization")
+	router := mux.NewRouter()
 
-	walletStorage := dbwallet.NewStorage()
-	walletService := domainwallet.NewService(walletStorage)
-	walletHandler := handlerwallet.NewHandler(walletService)
+	logger.Info("create db composite")
+	db, err := composites.NewPgDBComposite(ctx)
+	if err != nil {
+		logger.Fatal("db composite failed: ", err.Error())
+	}
+
+	logger.Info("create account composite")
+	accountComposite, err := composites.NewAccountComposite(db)
+	if err != nil {
+		logger.Fatal("account composite failed:", err.Error())
+	}
+	accountComposite.Handler.Register(router)
+
+	logger.Info("create transaction composite")
+	transactionComposite, err := composites.NewTransactionComposite(db)
+	if err != nil {
+		logger.Fatal("transaction composite failed:", err.Error())
+	}
+	transactionComposite.Handler.Register(router)
+
+	logger.Info("create wallet composite")
+	walletComposite, err := composites.NewWalletComposite(db)
+	if err != nil {
+		logger.Fatal("wallet composite failed:", err.Error())
+	}
+	walletComposite.Handler.Register(router)
+
+	addr := ":8080"
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		logger.Fatal("Error occurred:", err.Error())
+	}
+
+	server := &http.Server{
+		Handler:      router,
+		WriteTimeout: 5 * time.Second,
+		ReadTimeout:  5 * time.Second,
+	}
+	logger.Fatal(server.Serve(listener))
 }

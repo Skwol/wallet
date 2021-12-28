@@ -17,8 +17,8 @@ type handler struct {
 	transactionService transaction.Service
 }
 
-func NewHandler(service transaction.Service) adapters.Handler {
-	return &handler{}
+func NewHandler(service transaction.Service) (adapters.Handler, error) {
+	return &handler{}, nil
 }
 
 func (h *handler) Register(router *mux.Router) {
