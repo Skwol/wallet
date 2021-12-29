@@ -27,13 +27,13 @@ func NewHandler(service wallet.Service) (adapters.Handler, error) {
 
 func (h *handler) Register(router *mux.Router) {
 	router.HandleFunc(getWalletURL, h.getWallet)
-	router.HandleFunc(getWalletsURL, h.getWallets)
+	router.HandleFunc(getWalletsURL, h.getAllWallets)
 }
 
 func (h *handler) getWallet(w http.ResponseWriter, r *http.Request) {
 }
 
-func (h *handler) getWallets(w http.ResponseWriter, r *http.Request) {
+func (h *handler) getAllWallets(w http.ResponseWriter, r *http.Request) {
 	logger := logging.GetLogger()
 	limit, err := strconv.Atoi(r.FormValue("limit"))
 	if err != nil {

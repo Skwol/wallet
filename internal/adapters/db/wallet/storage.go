@@ -45,10 +45,9 @@ func (as *walletStorage) GetAll(ctx context.Context, limit int, offset int) ([]*
 	if err != nil {
 		return list, err
 	}
+	var wallet dbWallet
 	for rows.Next() {
-		var wallet dbWallet
-		err := rows.Scan(&wallet.ID, &wallet.Name, &wallet.AccountID, &wallet.Balance)
-		if err != nil {
+		if err := rows.Scan(&wallet.ID, &wallet.Name, &wallet.AccountID, &wallet.Balance); err != nil {
 			return nil, err
 		}
 		list = append(list, wallet.ToDTO())

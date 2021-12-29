@@ -29,13 +29,13 @@ func NewHandler(service account.Service) (adapters.Handler, error) {
 
 func (h *handler) Register(router *mux.Router) {
 	router.HandleFunc(getAccountURL, h.getAccount)
-	router.HandleFunc(getAccountsURL, h.getAccounts)
+	router.HandleFunc(getAccountsURL, h.getAllAccounts)
 }
 
 func (h *handler) getAccount(w http.ResponseWriter, r *http.Request) {
 }
 
-func (h *handler) getAccounts(w http.ResponseWriter, r *http.Request) {
+func (h *handler) getAllAccounts(w http.ResponseWriter, r *http.Request) {
 	logger := logging.GetLogger()
 	limit, err := strconv.Atoi(r.FormValue("limit"))
 	if err != nil {

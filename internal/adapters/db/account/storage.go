@@ -41,10 +41,9 @@ func (as *accountStorage) GetAll(ctx context.Context, limit int, offset int) ([]
 	if err != nil {
 		return nil, err
 	}
+	var account dbAccount
 	for rows.Next() {
-		var account dbAccount
-		err := rows.Scan(&account.ID, &account.Username)
-		if err != nil {
+		if err := rows.Scan(&account.ID, &account.Username); err != nil {
 			return nil, err
 		}
 		list = append(list, account.ToDTO())
