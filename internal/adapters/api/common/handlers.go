@@ -6,6 +6,7 @@ import (
 	"github.com/gorilla/mux"
 	adapters "github.com/skwol/wallet/internal/adapters/api"
 	"github.com/skwol/wallet/internal/domain/common"
+	"github.com/skwol/wallet/pkg/logging"
 )
 
 const (
@@ -25,8 +26,10 @@ func (h *handler) Register(router *mux.Router) {
 }
 
 func (h *handler) generateFakeData(w http.ResponseWriter, r *http.Request) {
+	logger := logging.GetLogger()
 	err := h.service.GenerateFakeData(r.Context())
 	if err != nil {
+		logger.Errorf("error during generating data: %s", err.Error())
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
