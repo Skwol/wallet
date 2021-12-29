@@ -1,10 +1,10 @@
 package account
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
-	"text/template"
 
 	"github.com/gorilla/mux"
 	adapters "github.com/skwol/wallet/internal/adapters/api"
@@ -57,19 +57,15 @@ func (h *handler) getAllAccounts(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("error returned from service: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
-	tmpl, err := template.ParseFiles("templates/accounts/accounts.html")
-	if err != nil {
-		logger.Errorf("error parsing template: %s", err.Error())
-		http.Error(w, fmt.Sprintf("error parsing template: %s", err.Error()), http.StatusInternalServerError)
-		return
-	}
-	if tmpl == nil {
-		logger.Error("missing accounts template")
-		http.Error(w, "missing accounts template", http.StatusInternalServerError)
-		return
-	}
+
 	type Data struct {
-		Accounts []*account.AccountDTO
+		Accounts []*account.AccountDTO `json:"accounts"`
 	}
-	tmpl.Execute(w, Data{Accounts: accounts})
+	response, err := json.Marshal(Data{Accounts: accounts})
+	if err != nil {
+		logger.Errorf("error marshaling accounts: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error marshaling accounts: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
+	w.Write(response)
 }

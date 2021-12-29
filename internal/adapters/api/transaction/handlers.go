@@ -1,10 +1,10 @@
 package transaction
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
-	"text/template"
 
 	"github.com/gorilla/mux"
 	adapters "github.com/skwol/wallet/internal/adapters/api"
@@ -55,19 +55,14 @@ func (h *handler) getAllTransactions(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("error returned from service: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
-	tmpl, err := template.ParseFiles("templates/transactions/transactions.html")
-	if err != nil {
-		logger.Errorf("error parsing transactions template: %s", err.Error())
-		http.Error(w, fmt.Sprintf("error parsing transactions template: %s", err.Error()), http.StatusInternalServerError)
-		return
-	}
-	if tmpl == nil {
-		logger.Error("missing transactions template")
-		http.Error(w, "missing transactions template", http.StatusInternalServerError)
-		return
-	}
 	type Data struct {
-		Transactions []*transaction.TransactionDTO
+		Transactions []*transaction.TransactionDTO `json:"transactions"`
 	}
-	tmpl.Execute(w, Data{Transactions: transactions})
+	response, err := json.Marshal(Data{Transactions: transactions})
+	if err != nil {
+		logger.Errorf("error marshaling transactions: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error marshaling transactions: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
+	w.Write(response)
 }

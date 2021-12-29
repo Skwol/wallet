@@ -1,10 +1,10 @@
 package wallet
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"strconv"
-	"text/template"
 
 	"github.com/gorilla/mux"
 	adapters "github.com/skwol/wallet/internal/adapters/api"
@@ -45,22 +45,14 @@ func (h *handler) getWallet(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("error returned from service: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
-	tmpl, err := template.ParseFiles("templates/wallets/wallet.html")
+	response, err := json.Marshal(walletDTO)
 	if err != nil {
-		logger.Errorf("error parsing wallet template: %s", err.Error())
-		http.Error(w, fmt.Sprintf("error parsing wallet template: %s", err.Error()), http.StatusInternalServerError)
+		logger.Errorf("error marshaling wallet: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error marshaling wallet: %s", err.Error()), http.StatusInternalServerError)
 		return
-	}
-	if tmpl == nil {
-		logger.Error("missing wallet template")
-		http.Error(w, "missing wallet template", http.StatusInternalServerError)
-		return
-	}
-	type Data struct {
-		Wallet *wallet.WalletDTO
 	}
 
-	tmpl.Execute(w, Data{Wallet: walletDTO})
+	w.Write(response)
 }
 
 func (h *handler) getAllWallets(w http.ResponseWriter, r *http.Request) {
@@ -85,19 +77,15 @@ func (h *handler) getAllWallets(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("error returned from service: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
-	tmpl, err := template.ParseFiles("templates/wallets/wallets.html")
-	if err != nil {
-		logger.Errorf("error parsing wallets template: %s", err.Error())
-		http.Error(w, fmt.Sprintf("error parsing wallets template: %s", err.Error()), http.StatusInternalServerError)
-		return
-	}
-	if tmpl == nil {
-		logger.Error("missing wallets template")
-		http.Error(w, "missing wallets template", http.StatusInternalServerError)
-		return
-	}
 	type Data struct {
-		Wallets []*wallet.WalletDTO
+		Wallets []*wallet.WalletDTO `json:"wallets"`
 	}
-	tmpl.Execute(w, Data{Wallets: wallets})
+	response, err := json.Marshal(Data{Wallets: wallets})
+	if err != nil {
+		logger.Errorf("error marshaling wallets: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error marshaling wallets: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(response)
 }
