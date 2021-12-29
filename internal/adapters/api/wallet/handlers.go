@@ -31,6 +31,36 @@ func (h *handler) Register(router *mux.Router) {
 }
 
 func (h *handler) getWallet(w http.ResponseWriter, r *http.Request) {
+	logger := logging.GetLogger()
+
+	id, err := strconv.ParseInt(mux.Vars(r)["record_id"], 10, 64)
+	if err != nil {
+		logger.Errorf("error parsing id: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error parsing id: %s", err.Error()), http.StatusUnprocessableEntity)
+		return
+	}
+	walletDTO, err := h.walletService.GetByID(r.Context(), id)
+	if err != nil {
+		logger.Errorf("error returned from service: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error returned from service: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
+	tmpl, err := template.ParseFiles("templates/wallets/wallet.html")
+	if err != nil {
+		logger.Errorf("error parsing wallet template: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error parsing wallet template: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
+	if tmpl == nil {
+		logger.Error("missing wallet template")
+		http.Error(w, "missing wallet template", http.StatusInternalServerError)
+		return
+	}
+	type Data struct {
+		Wallet *wallet.WalletDTO
+	}
+
+	tmpl.Execute(w, Data{Wallet: walletDTO})
 }
 
 func (h *handler) getAllWallets(w http.ResponseWriter, r *http.Request) {

@@ -23,8 +23,8 @@ func (s *service) Create(context.Context, *CreateWalletDTO) (*WalletDTO, error) 
 	return nil, nil
 }
 
-func (s *service) GetByID(context.Context, int64) (*WalletDTO, error) {
-	return nil, nil
+func (s *service) GetByID(ctx context.Context, id int64) (*WalletDTO, error) {
+	return s.storage.GetByID(ctx, id)
 }
 
 func (s *service) GetAll(ctx context.Context, limit int, offset int) ([]*WalletDTO, error) {

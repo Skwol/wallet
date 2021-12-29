@@ -2,6 +2,7 @@ package wallet
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/skwol/wallet/internal/domain/wallet"
 	"github.com/skwol/wallet/pkg/client/pgdb"
@@ -36,7 +37,15 @@ func (as *walletStorage) Create(ctx context.Context, acct *wallet.WalletDTO) (*w
 }
 
 func (as *walletStorage) GetByID(ctx context.Context, id int64) (*wallet.WalletDTO, error) {
-	return nil, nil
+	wallet := wallet.WalletDTO{}
+	query := `SELECT * FROM wallet WHERE id = $1;`
+	row := as.db.Conn.QueryRow(query, id)
+	switch err := row.Scan(&wallet.ID, &wallet.Name, &wallet.AccountID, &wallet.Balance); err {
+	case sql.ErrNoRows:
+		return nil, nil
+	default:
+		return &wallet, err
+	}
 }
 
 func (as *walletStorage) GetAll(ctx context.Context, limit int, offset int) ([]*wallet.WalletDTO, error) {
