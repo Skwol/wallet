@@ -46,6 +46,13 @@ func main() {
 	}
 	walletComposite.Handler.Register(router)
 
+	logger.Info("create common composite")
+	commonComposite, err := composites.NewCommonComposite(db)
+	if err != nil {
+		logger.Fatal("common composite failed:", err.Error())
+	}
+	commonComposite.Handler.Register(router)
+
 	addr := ":8080"
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {

@@ -1,7 +1,10 @@
 package wallet
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
+	"text/template"
 
 	"github.com/gorilla/mux"
 	adapters "github.com/skwol/wallet/internal/adapters/api"
@@ -14,11 +17,11 @@ const (
 )
 
 type handler struct {
-	transactionService wallet.Service
+	walletService wallet.Service
 }
 
 func NewHandler(service wallet.Service) (adapters.Handler, error) {
-	return &handler{}, nil
+	return &handler{walletService: service}, nil
 }
 
 func (h *handler) Register(router *mux.Router) {
@@ -30,6 +33,35 @@ func (h *handler) getWallet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *handler) getWallets(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte("wallets"))
+	limit, err := strconv.Atoi(r.FormValue("limit"))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error parsing limit query param: %s", err.Error()), http.StatusUnprocessableEntity)
+		return
+	}
+
+	offset, err := strconv.Atoi(r.FormValue("offset"))
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error parsing offset query param: %s", err.Error()), http.StatusUnprocessableEntity)
+		return
+	}
+
+	wallets, err := h.walletService.GetAll(r.Context(), limit, offset)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error returned from service: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
+	tmpl, err := template.ParseFiles("templates/wallets/wallets.html")
+	if err != nil {
+		http.Error(w, fmt.Sprintf("error parsing wallets template: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
+	if tmpl == nil {
+		http.Error(w, "missing wallets template", http.StatusInternalServerError)
+		return
+	}
+	type Data struct {
+		Wallets []*wallet.WalletDTO
+	}
+	tmpl.Execute(w, Data{Wallets: wallets})
 	w.WriteHeader(http.StatusOK)
 }

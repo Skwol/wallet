@@ -10,5 +10,6 @@ FROM alpine:latest
 RUN apk --no-cache add ca-certificates
 WORKDIR /root/
 COPY --from=builder /go/src/github.com/skwol/wallet/build/app ./
+COPY --from=builder /go/src/github.com/skwol/wallet/templates ./templates/
 EXPOSE 8080 8080
 CMD ["./app"]
