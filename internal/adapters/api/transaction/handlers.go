@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	getTransactionURL  = "/api/v1/transactions/{record_id}"
-	getTransactionsURL = "/api/v1/transactions"
+	transactionURL  = "/api/v1/transactions/{record_id}"
+	transactionsURL = "/api/v1/transactions"
 )
 
 type handler struct {
@@ -26,8 +26,8 @@ func NewHandler(service transaction.Service) (adapters.Handler, error) {
 }
 
 func (h *handler) Register(router *mux.Router) {
-	router.HandleFunc(getTransactionURL, h.getTransaction)
-	router.HandleFunc(getTransactionsURL, h.getAllTransactions)
+	router.HandleFunc(transactionURL, h.getTransaction)
+	router.HandleFunc(transactionsURL, h.getAllTransactions)
 }
 
 func (h *handler) getTransaction(w http.ResponseWriter, r *http.Request) {

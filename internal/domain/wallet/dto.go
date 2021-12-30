@@ -1,25 +1,28 @@
 package wallet
 
+import "github.com/skwol/wallet/internal/domain/transaction"
+
 type WalletDTO struct {
-	ID        int64   `json:"id"`
-	Name      string  `json:"name"`
-	AccountID int64   `json:"account_id"`
-	Balance   float64 `json:"balance"`
+	ID                  int64                         `json:"id"`
+	Name                string                        `json:"name"`
+	AccountID           int64                         `json:"account_id"`
+	Balance             float64                       `json:"balance"`
+	TransactionsToApply []*transaction.TransactionDTO `json:"-"`
 }
 
-func walletToDTO(wallet *Wallet) *WalletDTO {
-	return &WalletDTO{
-		ID:        wallet.ID,
-		Name:      wallet.Name,
-		AccountID: wallet.AccountID,
-		Balance:   wallet.Balance,
+func (d WalletDTO) toModel() *Wallet {
+	return &Wallet{
+		ID:        d.ID,
+		Name:      d.Name,
+		AccountID: d.AccountID,
+		Balance:   d.Balance,
 	}
 }
 
 func walletsToDTO(wallets []*Wallet) []*WalletDTO {
 	result := make([]*WalletDTO, len(wallets))
 	for i, wallet := range wallets {
-		result[i] = walletToDTO(wallet)
+		result[i] = wallet.toDTO()
 	}
 	return result
 }

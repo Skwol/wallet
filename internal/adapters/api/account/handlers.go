@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	getAccountURL  = "/api/v1/accounts/{record_id}"
-	getAccountsURL = "/api/v1/accounts"
+	accountURL  = "/api/v1/accounts/{record_id}"
+	accountsURL = "/api/v1/accounts"
 )
 
 type handler struct {
@@ -28,8 +28,8 @@ func NewHandler(service account.Service) (adapters.Handler, error) {
 }
 
 func (h *handler) Register(router *mux.Router) {
-	router.HandleFunc(getAccountURL, h.getAccount)
-	router.HandleFunc(getAccountsURL, h.getAllAccounts)
+	router.HandleFunc(accountURL, h.getAccount)
+	router.HandleFunc(accountsURL, h.getAllAccounts)
 }
 
 func (h *handler) getAccount(w http.ResponseWriter, r *http.Request) {

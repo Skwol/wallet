@@ -19,12 +19,12 @@ type dbTransaction struct {
 
 func (db dbTransaction) ToDTO() *transaction.TransactionDTO {
 	return &transaction.TransactionDTO{
-		ID:              db.ID,
-		SenderID:        db.SenderID,
-		ReceiverID:      db.ReceiverID,
-		Amount:          db.Amount,
-		Timestamp:       db.Timestamp,
-		TransactionType: db.TransactionType,
+		ID:         db.ID,
+		SenderID:   db.SenderID,
+		ReceiverID: db.ReceiverID,
+		Amount:     db.Amount,
+		Timestamp:  db.Timestamp,
+		Type:       db.TransactionType,
 	}
 }
 
