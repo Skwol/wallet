@@ -29,7 +29,8 @@ func NewHandler(service wallet.Service) (adapters.Handler, error) {
 func (h *handler) Register(router *mux.Router) {
 	router.HandleFunc(walletURL, h.getWallet).Methods("GET")
 	router.HandleFunc(walletURL, h.updateWallet).Methods("PATCH")
-	router.HandleFunc(walletsURL, h.getAllWallets)
+	router.HandleFunc(walletsURL, h.createWallet).Methods("POST")
+	router.HandleFunc(walletsURL, h.getAllWallets).Methods("GET")
 }
 
 func (h *handler) getWallet(w http.ResponseWriter, r *http.Request) {
@@ -85,6 +86,40 @@ func (h *handler) updateWallet(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("error updating wallet: %s", err.Error()), http.StatusUnprocessableEntity)
 		return
 	}
+	response, err := json.Marshal(walletDTO)
+	if err != nil {
+		logger.Errorf("error marshaling wallet: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error marshaling wallet: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(response)
+}
+
+func (h *handler) createWallet(w http.ResponseWriter, r *http.Request) {
+	logger := logging.GetLogger()
+
+	body, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		logger.Errorf("error reading request body: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error reading request body: %s", err.Error()), http.StatusUnprocessableEntity)
+		return
+	}
+
+	var request wallet.CreateWalletDTO
+	if err := json.Unmarshal(body, &request); err != nil {
+		logger.Errorf("error unmarshaling request: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error unmarshaling request: %s", err.Error()), http.StatusUnprocessableEntity)
+		return
+	}
+
+	walletDTO, err := h.walletService.Create(r.Context(), &request)
+	if err != nil {
+		logger.Errorf("error creating wallet: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error updating wallet: %s", err.Error()), http.StatusUnprocessableEntity)
+		return
+	}
+
 	response, err := json.Marshal(walletDTO)
 	if err != nil {
 		logger.Errorf("error marshaling wallet: %s", err.Error())

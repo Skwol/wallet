@@ -21,15 +21,15 @@ func NewWalletComposite(db *PgDBComposite) (*WalletComposite, error) {
 	}
 	storage, err := dbwallet.NewStorage(db.client)
 	if err != nil {
-		return nil, fmt.Errorf("error creating account storage %w", err)
+		return nil, fmt.Errorf("error creating wallet storage %w", err)
 	}
 	service, err := domainwallet.NewService(storage)
 	if err != nil {
-		return nil, fmt.Errorf("error creating account service %w", err)
+		return nil, fmt.Errorf("error creating wallet service %w", err)
 	}
 	handler, err := handlerwallet.NewHandler(service)
 	if err != nil {
-		return nil, fmt.Errorf("error creating account handler %w", err)
+		return nil, fmt.Errorf("error creating wallet handler %w", err)
 	}
 	return &WalletComposite{
 		Storage: storage,

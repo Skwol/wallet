@@ -15,9 +15,23 @@ var timeNow = func() time.Time {
 type Wallet struct {
 	ID                  int64
 	Name                string
-	AccountID           int64
 	Balance             float64
 	TransactionsToApply []transaction.Transaction
+}
+
+func newWallet(dto *CreateWalletDTO) (*Wallet, error) {
+	if dto.Balance < 0 {
+		return nil, fmt.Errorf("balance can not be less then zero")
+	}
+	var transactionsToApply []transaction.Transaction
+	if dto.Balance > 0 {
+		transactionsToApply = append(transactionsToApply, transaction.Transaction{Amount: dto.Balance, Timestamp: timeNow(), Type: transaction.TranTypeDeposit})
+	}
+	return &Wallet{
+		Name:                dto.Name,
+		Balance:             dto.Balance,
+		TransactionsToApply: transactionsToApply,
+	}, nil
 }
 
 func (w Wallet) toDTO() *WalletDTO {
@@ -28,16 +42,12 @@ func (w Wallet) toDTO() *WalletDTO {
 	return &WalletDTO{
 		ID:                  w.ID,
 		Name:                w.Name,
-		AccountID:           w.AccountID,
 		Balance:             w.Balance,
 		TransactionsToApply: transactionsToApply,
 	}
 }
 
 func (w *Wallet) Update(walletDTO *UpdateWalletDTO) (*Wallet, error) {
-	if w.AccountID != walletDTO.AccountID {
-		return nil, fmt.Errorf("wrong account")
-	}
 	if walletDTO.Balance < 0 {
 		return nil, fmt.Errorf("balance can not be less then 0")
 	}

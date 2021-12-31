@@ -5,7 +5,7 @@ import (
 
 	adapters "github.com/skwol/wallet/internal/adapters/api"
 	handlercommon "github.com/skwol/wallet/internal/adapters/api/common"
-	dbwallet "github.com/skwol/wallet/internal/adapters/db/common"
+	dbcommon "github.com/skwol/wallet/internal/adapters/db/common"
 	domaincommon "github.com/skwol/wallet/internal/domain/common"
 )
 
@@ -19,17 +19,17 @@ func NewCommonComposite(db *PgDBComposite) (*CommonComposite, error) {
 	if db == nil {
 		return nil, fmt.Errorf("missing db composite")
 	}
-	storage, err := dbwallet.NewStorage(db.client)
+	storage, err := dbcommon.NewStorage(db.client)
 	if err != nil {
-		return nil, fmt.Errorf("error creating account storage %w", err)
+		return nil, fmt.Errorf("error creating common storage %w", err)
 	}
 	service, err := domaincommon.NewService(storage)
 	if err != nil {
-		return nil, fmt.Errorf("error creating account service %w", err)
+		return nil, fmt.Errorf("error creating common service %w", err)
 	}
 	handler, err := handlercommon.NewHandler(service)
 	if err != nil {
-		return nil, fmt.Errorf("error creating account handler %w", err)
+		return nil, fmt.Errorf("error creating common handler %w", err)
 	}
 	return &CommonComposite{
 		Storage: storage,

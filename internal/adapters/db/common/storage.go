@@ -24,35 +24,21 @@ func (cs *commonStorage) GenerateFakeData(ctx context.Context) error {
 		return fmt.Errorf("error beginning transaction")
 	}
 
-	numberOfAccounts := 100
-	accountNames := make(map[string]bool, numberOfAccounts)
-	walletNames := make(map[string]bool, numberOfAccounts)
+	numberOfWallets := 100
+	walletNames := make(map[string]bool, numberOfWallets)
 
-	var accountID, walletID int64
-	for i := 0; i < numberOfAccounts; i++ {
-		accountName := randomdata.FullName(randomdata.RandomGender)
+	var walletID int64
+	for i := 0; i < numberOfWallets; i++ {
 		walletName := randomdata.SillyName()
-		if accountNames[accountName] {
-			i--
-			continue
-		}
 		if walletNames[walletName] {
 			i--
 			continue
 		}
-		accountNames[accountName] = true
 		walletNames[walletName] = true
 		walletBalance := randomdata.Decimal(1000)
 
-		row := tx.QueryRowContext(ctx, "INSERT INTO account (username) VALUES ($1)  RETURNING id;", accountName)
-		if err := row.Scan(&accountID); err != nil {
-			tx.Rollback()
-			return err
-		}
-
-		row = tx.QueryRow("INSERT INTO wallet (name, account_id, balance) VALUES ($1, $2, $3) RETURNING id;", walletName, accountID, walletBalance)
-		err = row.Scan(&walletID)
-		if err != nil {
+		row := tx.QueryRow("INSERT INTO wallet (name, balance) VALUES ($1, $2) RETURNING id;", walletName, walletBalance)
+		if err = row.Scan(&walletID); err != nil {
 			tx.Rollback()
 			return err
 		}

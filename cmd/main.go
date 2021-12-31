@@ -25,13 +25,6 @@ func main() {
 		logger.Fatal("db composite failed: ", err.Error())
 	}
 
-	logger.Info("create account composite")
-	accountComposite, err := composites.NewAccountComposite(db)
-	if err != nil {
-		logger.Fatal("account composite failed:", err.Error())
-	}
-	accountComposite.Handler.Register(router)
-
 	logger.Info("create transaction composite")
 	transactionComposite, err := composites.NewTransactionComposite(db)
 	if err != nil {

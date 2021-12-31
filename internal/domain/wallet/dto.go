@@ -5,17 +5,15 @@ import "github.com/skwol/wallet/internal/domain/transaction"
 type WalletDTO struct {
 	ID                  int64                         `json:"id"`
 	Name                string                        `json:"name"`
-	AccountID           int64                         `json:"account_id"`
 	Balance             float64                       `json:"balance"`
 	TransactionsToApply []*transaction.TransactionDTO `json:"-"`
 }
 
 func (d WalletDTO) toModel() *Wallet {
 	return &Wallet{
-		ID:        d.ID,
-		Name:      d.Name,
-		AccountID: d.AccountID,
-		Balance:   d.Balance,
+		ID:      d.ID,
+		Name:    d.Name,
+		Balance: d.Balance,
 	}
 }
 
@@ -28,13 +26,11 @@ func walletsToDTO(wallets []*Wallet) []*WalletDTO {
 }
 
 type CreateWalletDTO struct {
-	Name      string  `json:"name"`
-	AccountID int64   `json:"account_id"`
-	Balance   float64 `json:"balance"`
+	Name    string  `json:"name"`
+	Balance float64 `json:"balance"`
 }
 
 type UpdateWalletDTO struct {
-	Name      string  `json:"name"`
-	AccountID int64   `json:"account_id"`
-	Balance   float64 `json:"balance"`
+	Name    string  `json:"name"`
+	Balance float64 `json:"balance"`
 }
