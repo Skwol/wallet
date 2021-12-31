@@ -5,8 +5,6 @@ import (
 	"reflect"
 	"testing"
 	"time"
-
-	"github.com/skwol/wallet/internal/domain/transaction"
 )
 
 func TestWallet_Update(t *testing.T) {
@@ -46,8 +44,8 @@ func TestWallet_Update(t *testing.T) {
 			name:   "test OK set balance to zero",
 			fields: fields{ID: 1, Balance: 1},
 			args:   args{wallet: &UpdateWalletDTO{Balance: 0}},
-			want: &Wallet{ID: 1, Balance: 0, TransactionsToApply: []transaction.Transaction{{
-				SenderID: 1, ReceiverID: 1, Amount: 1, Timestamp: timeNow(), Type: transaction.TranTypeWithdraw,
+			want: &Wallet{ID: 1, Balance: 0, TransactionsToApply: []Transaction{{
+				SenderID: 1, ReceiverID: 1, Amount: 1, Timestamp: timeNow(), Type: TranTypeWithdraw,
 			}}},
 			wantErr: nil,
 		},
@@ -55,8 +53,8 @@ func TestWallet_Update(t *testing.T) {
 			name:   "test OK deposit",
 			fields: fields{ID: 1, Balance: 1},
 			args:   args{wallet: &UpdateWalletDTO{Balance: 20}},
-			want: &Wallet{ID: 1, Balance: 20, TransactionsToApply: []transaction.Transaction{{
-				SenderID: 1, ReceiverID: 1, Amount: 19, Timestamp: timeNow(), Type: transaction.TranTypeDeposit,
+			want: &Wallet{ID: 1, Balance: 20, TransactionsToApply: []Transaction{{
+				SenderID: 1, ReceiverID: 1, Amount: 19, Timestamp: timeNow(), Type: TranTypeDeposit,
 			}}},
 			wantErr: nil,
 		},
@@ -109,7 +107,7 @@ func Test_newWallet(t *testing.T) {
 		{
 			name:    "test ok with balance",
 			args:    args{&CreateWalletDTO{Balance: 1, Name: "test name"}},
-			want:    &Wallet{Name: "test name", Balance: 1, TransactionsToApply: []transaction.Transaction{{Amount: 1, Timestamp: timeNow(), Type: transaction.TranTypeDeposit}}},
+			want:    &Wallet{Name: "test name", Balance: 1, TransactionsToApply: []Transaction{{Amount: 1, Timestamp: timeNow(), Type: TranTypeDeposit}}},
 			wantErr: nil,
 		},
 	}

@@ -32,6 +32,13 @@ func main() {
 	}
 	transactionComposite.Handler.Register(router)
 
+	logger.Info("create transfer composite")
+	transferComposite, err := composites.NewTransferComposite(db)
+	if err != nil {
+		logger.Fatal("transfer composite failed:", err.Error())
+	}
+	transferComposite.Handler.Register(router)
+
 	logger.Info("create wallet composite")
 	walletComposite, err := composites.NewWalletComposite(db)
 	if err != nil {

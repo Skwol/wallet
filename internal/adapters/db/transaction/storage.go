@@ -37,10 +37,6 @@ func NewStorage(db *pgdb.PGDB) (transaction.Storage, error) {
 	return &transactionStorage{db: db}, nil
 }
 
-func (as *transactionStorage) Create(ctx context.Context, acct *transaction.TransactionDTO) (*transaction.TransactionDTO, error) {
-	return nil, nil
-}
-
 func (as *transactionStorage) GetByID(ctx context.Context, id int64) (*transaction.TransactionDTO, error) {
 	row := as.db.Conn.QueryRow(`SELECT id, sender_id, receiver_id, amount, date, tran_type FROM transaction WHERE id = $1;`, id)
 	var tran dbTransaction

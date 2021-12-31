@@ -3,7 +3,9 @@ package wallet
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
+	"time"
 
 	"github.com/skwol/wallet/internal/domain/wallet"
 	"github.com/skwol/wallet/pkg/client/pgdb"
@@ -20,6 +22,26 @@ func (db dbWallet) ToDTO() *wallet.WalletDTO {
 		ID:      db.ID,
 		Name:    db.Name,
 		Balance: db.Balance,
+	}
+}
+
+type dbTransaction struct {
+	ID         int64           `json:"id,omitempty"`
+	SenderID   int64           `json:"sender_id,omitempty"`
+	ReceiverID int64           `json:"receiver_id,omitempty"`
+	Amount     float64         `json:"amount,omitempty"`
+	Timestamp  time.Time       `json:"timestamp,omitempty"`
+	Type       wallet.TranType `json:"type,omitempty"`
+}
+
+func (db dbTransaction) ToDTO() *wallet.TransactionDTO {
+	return &wallet.TransactionDTO{
+		ID:         db.ID,
+		SenderID:   db.SenderID,
+		ReceiverID: db.ReceiverID,
+		Amount:     db.Amount,
+		Timestamp:  db.Timestamp,
+		Type:       db.Type,
 	}
 }
 
@@ -69,6 +91,45 @@ func (as *walletStorage) GetByID(ctx context.Context, id int64) (*wallet.WalletD
 	default:
 		return walletInDB.ToDTO(), err
 	}
+}
+
+func (as *walletStorage) GetByIDWithTransactions(ctx context.Context, id int64, limit int, offset int) (*wallet.WalletDTO, error) {
+	tx, err := as.db.Conn.BeginTx(ctx, nil)
+	if err != nil {
+		return nil, fmt.Errorf("error beginning transaction: %w", err)
+	}
+	query := `SELECT id, name, balance FROM wallet WHERE id = $1;`
+	row := as.db.Conn.QueryRow(query, id)
+	var walletInDB dbWallet
+	if err := row.Scan(&walletInDB.ID, &walletInDB.Name, &walletInDB.Balance); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	query = "SELECT id, sender_id, receiver_id, amount, date, tran_type FROM transaction WHERE sender_id = $1 OR receiver_id = $1 ORDER BY ID ASC LIMIT $2 OFFSET $3"
+	rows, err := as.db.Conn.Query(query, walletInDB.ID, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	var (
+		list []*wallet.TransactionDTO
+		tran dbTransaction
+	)
+	for rows.Next() {
+		if err := rows.Scan(&tran.ID, &tran.SenderID, &tran.ReceiverID, &tran.Amount, &tran.Timestamp, &tran.Type); err != nil {
+			return nil, err
+		}
+		list = append(list, tran.ToDTO())
+	}
+
+	if err := tx.Commit(); err != nil {
+		return nil, fmt.Errorf("error committing transction: %w", err)
+	}
+	walletDTO := walletInDB.ToDTO()
+	walletDTO.Transactions = list
+	return walletDTO, nil
 }
 
 func (as *walletStorage) GetByName(ctx context.Context, name string) (*wallet.WalletDTO, error) {

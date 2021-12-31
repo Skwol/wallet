@@ -10,6 +10,7 @@ import (
 type Service interface {
 	Create(context.Context, *CreateWalletDTO) (*WalletDTO, error)
 	GetByID(context.Context, int64) (*WalletDTO, error)
+	GetByIDWithTransactions(context.Context, int64, int, int) (*WalletDTO, error)
 	GetAll(ctx context.Context, limit int, offset int) ([]*WalletDTO, error)
 	Update(context.Context, int64, *UpdateWalletDTO) (*WalletDTO, error)
 }
@@ -56,6 +57,10 @@ func (s *service) Create(ctx context.Context, dto *CreateWalletDTO) (*WalletDTO,
 
 func (s *service) GetByID(ctx context.Context, id int64) (*WalletDTO, error) {
 	return s.storage.GetByID(ctx, id)
+}
+
+func (s *service) GetByIDWithTransactions(ctx context.Context, id int64, limit, offset int) (*WalletDTO, error) {
+	return s.storage.GetByIDWithTransactions(ctx, id, limit, offset)
 }
 
 func (s *service) GetAll(ctx context.Context, limit int, offset int) ([]*WalletDTO, error) {

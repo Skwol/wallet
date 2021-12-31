@@ -5,7 +5,6 @@ import (
 )
 
 type Service interface {
-	Create(context.Context, *CreateTransactionDTO) (*TransactionDTO, error)
 	GetByID(context.Context, int64) (*TransactionDTO, error)
 	GetAll(ctx context.Context, limit int, offset int) ([]*TransactionDTO, error)
 }
@@ -16,10 +15,6 @@ type service struct {
 
 func NewService(storage Storage) (Service, error) {
 	return &service{storage: storage}, nil
-}
-
-func (s *service) Create(context.Context, *CreateTransactionDTO) (*TransactionDTO, error) {
-	return nil, nil
 }
 
 func (s *service) GetByID(ctx context.Context, id int64) (*TransactionDTO, error) {
