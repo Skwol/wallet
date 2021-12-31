@@ -31,6 +31,28 @@ func (h *handler) Register(router *mux.Router) {
 }
 
 func (h *handler) getTransaction(w http.ResponseWriter, r *http.Request) {
+	logger := logging.GetLogger()
+
+	id, err := strconv.ParseInt(mux.Vars(r)["record_id"], 10, 64)
+	if err != nil {
+		logger.Errorf("error parsing id: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error parsing id: %s", err.Error()), http.StatusUnprocessableEntity)
+		return
+	}
+	walletDTO, err := h.transactionService.GetByID(r.Context(), id)
+	if err != nil {
+		logger.Errorf("error returned from service: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error returned from service: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
+	response, err := json.Marshal(walletDTO)
+	if err != nil {
+		logger.Errorf("error marshaling transaction: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error marshaling transaction: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
+
+	w.Write(response)
 }
 
 func (h *handler) getAllTransactions(w http.ResponseWriter, r *http.Request) {

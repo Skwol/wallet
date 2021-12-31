@@ -22,8 +22,8 @@ func (s *service) Create(context.Context, *CreateTransactionDTO) (*TransactionDT
 	return nil, nil
 }
 
-func (s *service) GetByID(context.Context, int64) (*TransactionDTO, error) {
-	return nil, nil
+func (s *service) GetByID(ctx context.Context, id int64) (*TransactionDTO, error) {
+	return s.storage.GetByID(ctx, id)
 }
 
 func (s *service) GetAll(ctx context.Context, limit int, offset int) ([]*TransactionDTO, error) {

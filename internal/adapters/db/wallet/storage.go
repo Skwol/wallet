@@ -60,26 +60,26 @@ func (as *walletStorage) Create(ctx context.Context, dto *wallet.WalletDTO) (*wa
 }
 
 func (as *walletStorage) GetByID(ctx context.Context, id int64) (*wallet.WalletDTO, error) {
-	wallet := wallet.WalletDTO{}
 	query := `SELECT id, name, balance FROM wallet WHERE id = $1;`
 	row := as.db.Conn.QueryRow(query, id)
-	switch err := row.Scan(&wallet.ID, &wallet.Name, &wallet.Balance); err {
+	var walletInDB dbWallet
+	switch err := row.Scan(&walletInDB.ID, &walletInDB.Name, &walletInDB.Balance); err {
 	case sql.ErrNoRows:
 		return nil, nil
 	default:
-		return &wallet, err
+		return walletInDB.ToDTO(), err
 	}
 }
 
 func (as *walletStorage) GetByName(ctx context.Context, name string) (*wallet.WalletDTO, error) {
-	wallet := wallet.WalletDTO{}
 	query := `SELECT id FROM wallet WHERE name = $1;`
 	row := as.db.Conn.QueryRow(query, name)
-	switch err := row.Scan(&wallet.ID); err {
+	var walletInDB dbWallet
+	switch err := row.Scan(&walletInDB.ID); err {
 	case sql.ErrNoRows:
 		return nil, nil
 	default:
-		return &wallet, err
+		return walletInDB.ToDTO(), err
 	}
 }
 
@@ -103,14 +103,6 @@ func (as *walletStorage) Update(ctx context.Context, walletDTO *wallet.WalletDTO
 	tx, err := as.db.Conn.BeginTx(ctx, nil)
 	if err != nil {
 		return fmt.Errorf("error beginning transaction: %w", err)
-	}
-
-	var balance float64
-	row := tx.QueryRowContext(ctx, "SELECT balance FROM wallet WHERE id = $1 FOR UPDATE;", walletDTO.ID)
-	err = row.Scan(&balance)
-	if err != nil {
-		tx.Rollback()
-		return fmt.Errorf("error getting balance for wallet: %w", err)
 	}
 
 	_, err = tx.ExecContext(ctx, "UPDATE wallet SET name=$1, balance=$2 WHERE id=$3;", walletDTO.Name, walletDTO.Balance, walletDTO.ID)
