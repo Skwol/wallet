@@ -116,7 +116,7 @@ func (h *handler) createWallet(w http.ResponseWriter, r *http.Request) {
 	walletDTO, err := h.walletService.Create(r.Context(), &request)
 	if err != nil {
 		logger.Errorf("error creating wallet: %s", err.Error())
-		http.Error(w, fmt.Sprintf("error updating wallet: %s", err.Error()), http.StatusUnprocessableEntity)
+		http.Error(w, fmt.Sprintf("error creating wallet: %s", err.Error()), http.StatusUnprocessableEntity)
 		return
 	}
 
