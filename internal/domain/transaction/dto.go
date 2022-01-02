@@ -18,3 +18,21 @@ type CreateTransactionDTO struct {
 	Timestamp  time.Time `json:"timestamp"`
 	Type       string    `json:"type"`
 }
+
+type FilterTransactionsDTO struct {
+	SenderIDs   []int64           `json:"sender_ids"`
+	ReceiverIDs []int64           `json:"receiver_ids"`
+	Amount      *FloatRangeFilter `json:"amount"`
+	Timestamp   *DateRangeFilter  `json:"timestamp"`
+	Types       []string          `json:"types"`
+}
+
+type FloatRangeFilter struct {
+	From float64 `json:"from"`
+	To   float64 `json:"to"`
+}
+
+type DateRangeFilter struct {
+	From time.Time `json:"from"`
+	To   time.Time `json:"to"`
+}

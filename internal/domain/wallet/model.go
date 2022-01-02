@@ -41,12 +41,12 @@ func newWallet(dto *CreateWalletDTO) (*Wallet, error) {
 	}, nil
 }
 
-func (w Wallet) toDTO() *WalletDTO {
+func (w Wallet) toDTO() WalletDTO {
 	transactionsToApply := make([]*TransactionDTO, len(w.TransactionsToApply))
 	for i, tran := range w.TransactionsToApply {
 		transactionsToApply[i] = tran.toDTO()
 	}
-	return &WalletDTO{
+	return WalletDTO{
 		ID:                  w.ID,
 		Name:                w.Name,
 		Balance:             w.Balance,

@@ -4,8 +4,8 @@ import (
 	"time"
 )
 
-func walletsToDTO(wallets []*Wallet) []*WalletDTO {
-	result := make([]*WalletDTO, len(wallets))
+func walletsToDTO(wallets []*Wallet) []WalletDTO {
+	result := make([]WalletDTO, len(wallets))
 	for i, wallet := range wallets {
 		result[i] = wallet.toDTO()
 	}
@@ -17,7 +17,7 @@ type WalletDTO struct {
 	Name                string            `json:"name"`
 	Balance             float64           `json:"balance"`
 	TransactionsToApply []*TransactionDTO `json:"-"`
-	Transactions        []*TransactionDTO `json:"transactions"`
+	Transactions        []*TransactionDTO `json:"transactions,omitempty"`
 }
 
 func (d WalletDTO) toModel() *Wallet {

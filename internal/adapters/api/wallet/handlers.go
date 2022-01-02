@@ -28,11 +28,13 @@ func NewHandler(service wallet.Service) (adapters.Handler, error) {
 }
 
 func (h *handler) Register(router *mux.Router) {
+	router.HandleFunc(walletsURL, h.getAllWallets).Methods("GET")
 	router.HandleFunc(walletURL, h.getWallet).Methods("GET")
 	router.HandleFunc(walletWithTransactionsURL, h.getWalletWithTransactions).Methods("GET")
+
 	router.HandleFunc(walletURL, h.updateWallet).Methods("PATCH")
+
 	router.HandleFunc(walletsURL, h.createWallet).Methods("POST")
-	router.HandleFunc(walletsURL, h.getAllWallets).Methods("GET")
 }
 
 func (h *handler) getWallet(w http.ResponseWriter, r *http.Request) {
@@ -154,7 +156,7 @@ func (h *handler) createWallet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	walletDTO, err := h.walletService.Create(r.Context(), &request)
+	walletDTO, err := h.walletService.Create(r.Context(), request)
 	if err != nil {
 		logger.Errorf("error creating wallet: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error creating wallet: %s", err.Error()), http.StatusUnprocessableEntity)
@@ -193,10 +195,7 @@ func (h *handler) getAllWallets(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("error returned from service: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
-	type Data struct {
-		Wallets []*wallet.WalletDTO `json:"wallets"`
-	}
-	response, err := json.Marshal(Data{Wallets: wallets})
+	response, err := json.Marshal(wallets)
 	if err != nil {
 		logger.Errorf("error marshaling wallets: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error marshaling wallets: %s", err.Error()), http.StatusInternalServerError)
