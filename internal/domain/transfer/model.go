@@ -32,15 +32,15 @@ type Wallet struct {
 	Balance float64
 }
 
-func (w *Wallet) toDTO() *WalletDTO {
-	return &WalletDTO{
+func (w *Wallet) toDTO() WalletDTO {
+	return WalletDTO{
 		ID:      w.ID,
 		Balance: w.Balance,
 	}
 }
 
 func createTransfer(dto *CreateTransferDTO) (*Transfer, error) {
-	if dto.Receiver == nil || dto.Sender == nil {
+	if dto.Receiver.ID == 0 || dto.Sender.ID == 0 {
 		return nil, fmt.Errorf("missing sender or receiver")
 	}
 	if dto.Receiver.ID == dto.Sender.ID {

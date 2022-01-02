@@ -7,11 +7,11 @@ type TransferDTO struct {
 }
 
 type CreateTransferDTO struct {
-	ID        int64      `json:"id"`
-	Amount    float64    `json:"amount"`
-	Timestamp time.Time  `json:"timestamp"`
-	Sender    *WalletDTO `json:"sender"`
-	Receiver  *WalletDTO `json:"receiver"`
+	ID        int64     `json:"id"`
+	Amount    float64   `json:"amount"`
+	Timestamp time.Time `json:"timestamp"`
+	Sender    WalletDTO `json:"sender"`
+	Receiver  WalletDTO `json:"receiver"`
 }
 
 func (d CreateTransferDTO) toModel() *Transfer {

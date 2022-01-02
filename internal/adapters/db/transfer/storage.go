@@ -14,8 +14,8 @@ type dbWallet struct {
 	Balance float64 `json:"balance,omitempty"`
 }
 
-func (db dbWallet) ToDTO() *transfer.WalletDTO {
-	return &transfer.WalletDTO{
+func (db dbWallet) ToDTO() transfer.WalletDTO {
+	return transfer.WalletDTO{
 		ID:      db.ID,
 		Balance: db.Balance,
 	}
@@ -29,39 +29,39 @@ func NewStorage(db *pgdb.PGDB) (transfer.Storage, error) {
 	return &transferStorage{db: db}, nil
 }
 
-func (ts transferStorage) Create(ctx context.Context, dto *transfer.CreateTransferDTO) (*transfer.TransferDTO, error) {
+func (ts transferStorage) Create(ctx context.Context, dto *transfer.CreateTransferDTO) (transfer.TransferDTO, error) {
 	tx, err := ts.db.Conn.BeginTx(ctx, nil)
 	if err != nil {
 		tx.Rollback()
-		return nil, fmt.Errorf("error beginning transaction: %w", err)
+		return transfer.TransferDTO{}, fmt.Errorf("error beginning transaction: %w", err)
 	}
 	if _, err = tx.ExecContext(ctx, "UPDATE wallet SET balance=$1 WHERE id=$2;", dto.Sender.Balance, dto.Sender.ID); err != nil {
 		tx.Rollback()
-		return nil, fmt.Errorf("error updating sender wallet: %w", err)
+		return transfer.TransferDTO{}, fmt.Errorf("error updating sender wallet: %w", err)
 	}
 	if _, err = tx.ExecContext(ctx, "UPDATE wallet SET balance=$1 WHERE id=$2;", dto.Receiver.Balance, dto.Receiver.ID); err != nil {
 		tx.Rollback()
-		return nil, fmt.Errorf("error updating receiver wallet: %w", err)
+		return transfer.TransferDTO{}, fmt.Errorf("error updating receiver wallet: %w", err)
 	}
 	row := tx.QueryRow("INSERT INTO transaction (sender_id, receiver_id, amount, date, tran_type) VALUES ($1, $2, $3, $4, 'transfer') RETURNING id;", dto.Sender.ID, dto.Receiver.ID, dto.Amount, dto.Timestamp)
 
 	if err = row.Scan(&dto.ID); err != nil {
 		tx.Rollback()
-		return nil, err
+		return transfer.TransferDTO{}, err
 	}
 	if err = tx.Commit(); err != nil {
-		return nil, fmt.Errorf("error during commit")
+		return transfer.TransferDTO{}, fmt.Errorf("error during commit")
 	}
-	return &transfer.TransferDTO{CreateTransferDTO: *dto}, nil
+	return transfer.TransferDTO{CreateTransferDTO: *dto}, nil
 }
 
-func (ts transferStorage) GetWallet(ctx context.Context, id int64) (*transfer.WalletDTO, error) {
+func (ts transferStorage) GetWallet(ctx context.Context, id int64) (transfer.WalletDTO, error) {
 	query := `SELECT id, balance FROM wallet WHERE id = $1;`
 	row := ts.db.Conn.QueryRow(query, id)
 	var walletInDB dbWallet
 	switch err := row.Scan(&walletInDB.ID, &walletInDB.Balance); err {
 	case sql.ErrNoRows:
-		return nil, nil
+		return transfer.WalletDTO{}, nil
 	default:
 		return walletInDB.ToDTO(), err
 	}
