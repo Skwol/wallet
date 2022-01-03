@@ -7,7 +7,9 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 )
 
-require github.com/Pallinder/go-randomdata v1.2.0 // indirect
+require github.com/Pallinder/go-randomdata v1.2.0
+
+require golang.org/x/text v0.3.7 // indirect
 
 require (
 	github.com/lib/pq v1.10.4
