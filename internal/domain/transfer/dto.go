@@ -3,15 +3,15 @@ package transfer
 import "time"
 
 type TransferDTO struct {
+	ID int64
 	CreateTransferDTO
 }
 
 type CreateTransferDTO struct {
-	ID        int64     `json:"id"`
-	Amount    float64   `json:"amount"`
-	Timestamp time.Time `json:"timestamp"`
-	Sender    WalletDTO `json:"sender"`
-	Receiver  WalletDTO `json:"receiver"`
+	Amount    float64
+	Timestamp time.Time
+	Sender    WalletDTO
+	Receiver  WalletDTO
 }
 
 func (d CreateTransferDTO) toModel() *Transfer {
@@ -24,12 +24,12 @@ func (d CreateTransferDTO) toModel() *Transfer {
 }
 
 type WalletDTO struct {
-	ID      int64   `json:"id"`
-	Balance float64 `json:"balance"`
+	ID      int64
+	Balance float64
 }
 
-func (d WalletDTO) toModel() *Wallet {
-	return &Wallet{
+func (d WalletDTO) toModel() Wallet {
+	return Wallet{
 		ID:      d.ID,
 		Balance: d.Balance,
 	}

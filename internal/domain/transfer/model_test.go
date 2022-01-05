@@ -59,7 +59,7 @@ func Test_createTransfer(t *testing.T) {
 		{
 			name:    "test ok",
 			args:    args{dto: &CreateTransferDTO{Amount: 100, Sender: WalletDTO{ID: 1, Balance: 150}, Receiver: WalletDTO{ID: 2, Balance: 50}}},
-			want:    &Transfer{Amount: 100, Timestamp: timeNow(), Sender: &Wallet{ID: 1, Balance: 50}, Receiver: &Wallet{ID: 2, Balance: 150}},
+			want:    &Transfer{Amount: 100, Timestamp: timeNow(), Sender: Wallet{ID: 1, Balance: 50}, Receiver: Wallet{ID: 2, Balance: 150}},
 			wantErr: nil,
 		},
 	}

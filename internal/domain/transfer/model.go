@@ -12,8 +12,8 @@ var timeNow = func() time.Time {
 type Transfer struct {
 	Amount    float64
 	Timestamp time.Time
-	Sender    *Wallet
-	Receiver  *Wallet
+	Sender    Wallet
+	Receiver  Wallet
 }
 
 func (t *Transfer) toDTO() *TransferDTO {

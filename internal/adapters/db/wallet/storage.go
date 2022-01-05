@@ -12,9 +12,9 @@ import (
 )
 
 type dbWallet struct {
-	ID      int64   `json:"id,omitempty"`
-	Name    string  `json:"name,omitempty"`
-	Balance float64 `json:"balance,omitempty"`
+	ID      int64
+	Name    string
+	Balance float64
 }
 
 func (db dbWallet) ToDTO() wallet.WalletDTO {
@@ -26,12 +26,12 @@ func (db dbWallet) ToDTO() wallet.WalletDTO {
 }
 
 type dbTransaction struct {
-	ID         int64           `json:"id,omitempty"`
-	SenderID   int64           `json:"sender_id,omitempty"`
-	ReceiverID int64           `json:"receiver_id,omitempty"`
-	Amount     float64         `json:"amount,omitempty"`
-	Timestamp  time.Time       `json:"timestamp,omitempty"`
-	Type       wallet.TranType `json:"type,omitempty"`
+	ID         int64
+	SenderID   int64
+	ReceiverID int64
+	Amount     float64
+	Timestamp  time.Time
+	Type       wallet.TranType
 }
 
 func (db dbTransaction) ToDTO() wallet.TransactionDTO {

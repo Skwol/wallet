@@ -10,8 +10,8 @@ import (
 )
 
 type dbWallet struct {
-	ID      int64   `json:"id,omitempty"`
-	Balance float64 `json:"balance,omitempty"`
+	ID      int64
+	Balance float64
 }
 
 func (db dbWallet) ToDTO() transfer.WalletDTO {
@@ -30,29 +30,31 @@ func NewStorage(db *pgdb.PGDB) (transfer.Storage, error) {
 }
 
 func (ts transferStorage) Create(ctx context.Context, dto *transfer.CreateTransferDTO) (transfer.TransferDTO, error) {
+	var result transfer.TransferDTO
+	result.CreateTransferDTO = *dto
 	tx, err := ts.db.Conn.BeginTx(ctx, nil)
 	if err != nil {
 		tx.Rollback()
-		return transfer.TransferDTO{}, fmt.Errorf("error beginning transaction: %w", err)
+		return result, fmt.Errorf("error beginning transaction: %w", err)
 	}
 	if _, err = tx.ExecContext(ctx, "UPDATE wallet SET balance=$1 WHERE id=$2;", dto.Sender.Balance, dto.Sender.ID); err != nil {
 		tx.Rollback()
-		return transfer.TransferDTO{}, fmt.Errorf("error updating sender wallet: %w", err)
+		return result, fmt.Errorf("error updating sender wallet: %w", err)
 	}
 	if _, err = tx.ExecContext(ctx, "UPDATE wallet SET balance=$1 WHERE id=$2;", dto.Receiver.Balance, dto.Receiver.ID); err != nil {
 		tx.Rollback()
-		return transfer.TransferDTO{}, fmt.Errorf("error updating receiver wallet: %w", err)
+		return result, fmt.Errorf("error updating receiver wallet: %w", err)
 	}
 	row := tx.QueryRow("INSERT INTO transaction (sender_id, receiver_id, amount, date, tran_type) VALUES ($1, $2, $3, $4, 'transfer') RETURNING id;", dto.Sender.ID, dto.Receiver.ID, dto.Amount, dto.Timestamp)
 
-	if err = row.Scan(&dto.ID); err != nil {
+	if err = row.Scan(&result.ID); err != nil {
 		tx.Rollback()
-		return transfer.TransferDTO{}, err
+		return result, err
 	}
 	if err = tx.Commit(); err != nil {
-		return transfer.TransferDTO{}, fmt.Errorf("error during commit")
+		return result, fmt.Errorf("error during commit")
 	}
-	return transfer.TransferDTO{CreateTransferDTO: *dto}, nil
+	return result, nil
 }
 
 func (ts transferStorage) GetWallet(ctx context.Context, id int64) (transfer.WalletDTO, error) {

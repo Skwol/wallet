@@ -96,31 +96,31 @@ func TestCreateTransfer(t *testing.T) {
 	defer ts.Close()
 
 	type args struct {
-		request domaintransfer.CreateTransferDTO
+		request Transfer
 	}
 	tests := []struct {
 		name               string
 		args               args
-		want               domaintransfer.TransferDTO
-		wantTransaction    domaintransfer.TransferDTO
+		want               Transfer
+		wantTransaction    Transfer
 		wantWalletBalances map[int]float64
 		wantStatusCode     int
 	}{
 		{
 			name:           "transfer when sender == receiver",
-			args:           args{domaintransfer.CreateTransferDTO{Amount: 100, Sender: domaintransfer.WalletDTO{ID: 1}, Receiver: domaintransfer.WalletDTO{ID: 1}}},
+			args:           args{Transfer{Amount: 100, Sender: Wallet{ID: 1}, Receiver: Wallet{ID: 1}}},
 			wantStatusCode: http.StatusUnprocessableEntity,
 		},
 		{
 			name:           "transfer when sender does not have enough",
-			args:           args{domaintransfer.CreateTransferDTO{Amount: 1000, Sender: domaintransfer.WalletDTO{ID: 1}, Receiver: domaintransfer.WalletDTO{ID: 2}}},
+			args:           args{Transfer{Amount: 1000, Sender: Wallet{ID: 1}, Receiver: Wallet{ID: 2}}},
 			wantStatusCode: http.StatusUnprocessableEntity,
 		},
 		{
 			name:               "transfer OK",
-			args:               args{domaintransfer.CreateTransferDTO{Amount: 100, Sender: domaintransfer.WalletDTO{ID: 1}, Receiver: domaintransfer.WalletDTO{ID: 2}}},
-			want:               domaintransfer.TransferDTO{CreateTransferDTO: domaintransfer.CreateTransferDTO{Amount: 100, Sender: domaintransfer.WalletDTO{ID: 1, Balance: 0}, Receiver: domaintransfer.WalletDTO{ID: 2, Balance: 300}}},
-			wantTransaction:    domaintransfer.TransferDTO{CreateTransferDTO: domaintransfer.CreateTransferDTO{Amount: 100, Sender: domaintransfer.WalletDTO{ID: 1}, Receiver: domaintransfer.WalletDTO{ID: 2}}},
+			args:               args{Transfer{Amount: 100, Sender: Wallet{ID: 1}, Receiver: Wallet{ID: 2}}},
+			want:               Transfer{Amount: 100, Sender: Wallet{ID: 1, Balance: 0}, Receiver: Wallet{ID: 2, Balance: 300}},
+			wantTransaction:    Transfer{Amount: 100, Sender: Wallet{ID: 1}, Receiver: Wallet{ID: 2}},
 			wantWalletBalances: map[int]float64{1: 0, 2: 300},
 			wantStatusCode:     http.StatusCreated,
 		},
@@ -142,7 +142,7 @@ func TestCreateTransfer(t *testing.T) {
 				t.Fatalf("test %s: error reading request: %s", tt.name, err.Error())
 			}
 
-			if tt.want.CreateTransferDTO.Amount == 0 {
+			if tt.want.Amount == 0 {
 				var got domaintransfer.TransferDTO
 				if err := json.Unmarshal(result, &got); err == nil {
 					t.Fatalf("test %s: should not receive correct response from server", tt.name)
@@ -150,7 +150,7 @@ func TestCreateTransfer(t *testing.T) {
 				return
 			}
 
-			var got domaintransfer.TransferDTO
+			var got Transfer
 			if err := json.Unmarshal(result, &got); err != nil {
 				t.Fatalf("test %s: error unmarshaling response: %s", tt.name, err.Error())
 			}
@@ -175,10 +175,10 @@ func TestCreateTransfer(t *testing.T) {
 			}
 
 			// test transactions in db
-			var transactionInDB domaintransfer.TransferDTO
+			var transactionInDB Transfer
 
 			row := dbClient.Conn.QueryRowContext(ctx, "SELECT sender_id, receiver_id, amount FROM transaction WHERE id = $1 and tran_type = 'transfer'", got.ID)
-			switch err := row.Scan(&transactionInDB.CreateTransferDTO.Sender.ID, &transactionInDB.CreateTransferDTO.Receiver.ID, &transactionInDB.CreateTransferDTO.Amount); err {
+			switch err := row.Scan(&transactionInDB.Sender.ID, &transactionInDB.Receiver.ID, &transactionInDB.Amount); err {
 			case sql.ErrNoRows:
 				t.Fatalf("test %s: missing transaction %d in db", tt.name, got.ID)
 			default:

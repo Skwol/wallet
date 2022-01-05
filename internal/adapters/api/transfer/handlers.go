@@ -36,21 +36,22 @@ func (h *handler) createTransfer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var request transfer.CreateTransferDTO
+	var request Transfer
 	if err := json.Unmarshal(body, &request); err != nil {
 		logger.Errorf("error unmarshaling request: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error unmarshaling request: %s", err.Error()), http.StatusUnprocessableEntity)
 		return
 	}
 
-	transferDTO, err := h.transferService.Create(r.Context(), &request)
+	createRequest := request.toCreateRequest()
+	transferDTO, err := h.transferService.Create(r.Context(), &createRequest)
 	if err != nil {
 		logger.Errorf("error creating transfer: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error creating wallet: %s", err.Error()), http.StatusUnprocessableEntity)
 		return
 	}
 
-	response, err := json.Marshal(transferDTO)
+	response, err := json.Marshal(newTransfer(transferDTO))
 	if err != nil {
 		logger.Errorf("error marshaling transfer: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error marshaling transfer: %s", err.Error()), http.StatusInternalServerError)
