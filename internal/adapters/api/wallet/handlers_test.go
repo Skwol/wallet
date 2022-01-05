@@ -128,7 +128,7 @@ func TestGetWallets(t *testing.T) {
 	tests := []struct {
 		name           string
 		args           args
-		want           []domainwallet.WalletDTO
+		want           []Wallet
 		wantStatusCode int
 		singleValue    bool
 	}{
@@ -141,7 +141,7 @@ func TestGetWallets(t *testing.T) {
 		{
 			name: "wallet without transactions",
 			args: args{endpoint: fmt.Sprintf("%s/api/v1/wallets/1", ts.URL)},
-			want: []domainwallet.WalletDTO{
+			want: []Wallet{
 				{ID: 1, Name: "test_wallet_one", Balance: 100},
 			},
 			wantStatusCode: http.StatusOK,
@@ -150,7 +150,7 @@ func TestGetWallets(t *testing.T) {
 		{
 			name: "all wallets",
 			args: args{endpoint: fmt.Sprintf("%s/api/v1/wallets?limit=10&offset=0", ts.URL)},
-			want: []domainwallet.WalletDTO{
+			want: []Wallet{
 				{ID: 1, Name: "test_wallet_one", Balance: 100},
 				{ID: 2, Name: "test_wallet_two", Balance: 200},
 				{ID: 3, Name: "test_wallet_three", Balance: 300},
@@ -161,7 +161,7 @@ func TestGetWallets(t *testing.T) {
 		{
 			name: "all wallets limited",
 			args: args{endpoint: fmt.Sprintf("%s/api/v1/wallets?limit=1&offset=1", ts.URL)},
-			want: []domainwallet.WalletDTO{
+			want: []Wallet{
 				{ID: 2, Name: "test_wallet_two", Balance: 200},
 			},
 			wantStatusCode: http.StatusOK,
@@ -174,11 +174,11 @@ func TestGetWallets(t *testing.T) {
 		{
 			name: "wallet with all transactions",
 			args: args{endpoint: fmt.Sprintf("%s/api/v1/wallets-with-transactions/1?limit=10&offset=0", ts.URL)},
-			want: []domainwallet.WalletDTO{
-				{ID: 1, Name: "test_wallet_one", Balance: 100, Transactions: []domainwallet.TransactionDTO{
-					{ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranOneDate, Type: domainwallet.TranTypeDeposit},
-					{ID: 2, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranTwoDate, Type: domainwallet.TranTypeTransfer},
-					{ID: 3, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranThreeDate, Type: domainwallet.TranTypeWithdraw},
+			want: []Wallet{
+				{ID: 1, Name: "test_wallet_one", Balance: 100, Transactions: []Transaction{
+					{ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranOneDate, Type: string(domainwallet.TranTypeDeposit)},
+					{ID: 2, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranTwoDate, Type: string(domainwallet.TranTypeTransfer)},
+					{ID: 3, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranThreeDate, Type: string(domainwallet.TranTypeWithdraw)},
 				}},
 			},
 			wantStatusCode: http.StatusOK,
@@ -187,9 +187,9 @@ func TestGetWallets(t *testing.T) {
 		{
 			name: "wallet with all transactions limited with offset",
 			args: args{endpoint: fmt.Sprintf("%s/api/v1/wallets-with-transactions/1?limit=1&offset=1", ts.URL)},
-			want: []domainwallet.WalletDTO{
-				{ID: 1, Name: "test_wallet_one", Balance: 100, Transactions: []domainwallet.TransactionDTO{
-					{ID: 2, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranTwoDate, Type: domainwallet.TranTypeTransfer},
+			want: []Wallet{
+				{ID: 1, Name: "test_wallet_one", Balance: 100, Transactions: []Transaction{
+					{ID: 2, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranTwoDate, Type: string(domainwallet.TranTypeTransfer)},
 				}},
 			},
 			wantStatusCode: http.StatusOK,
@@ -198,7 +198,7 @@ func TestGetWallets(t *testing.T) {
 		{
 			name: "wallet with all transactions limited with offset out of values",
 			args: args{endpoint: fmt.Sprintf("%s/api/v1/wallets-with-transactions/1?limit=1&offset=10", ts.URL)},
-			want: []domainwallet.WalletDTO{
+			want: []Wallet{
 				{ID: 1, Name: "test_wallet_one", Balance: 100},
 			},
 			wantStatusCode: http.StatusOK,
@@ -229,13 +229,13 @@ func TestGetWallets(t *testing.T) {
 				return
 			}
 
-			var got []domainwallet.WalletDTO
+			var got []Wallet
 			if tt.singleValue {
-				var response domainwallet.WalletDTO
+				var response Wallet
 				if err := json.Unmarshal(result, &response); err != nil {
 					t.Fatalf("test %s: error unmarshaling response: %s", tt.name, err.Error())
 				}
-				got = []domainwallet.WalletDTO{response}
+				got = []Wallet{response}
 			} else {
 				if err := json.Unmarshal(result, &got); err != nil {
 					t.Fatalf("test %s: error unmarshaling response: %s", tt.name, err.Error())
@@ -271,38 +271,38 @@ func TestUpdateWallet(t *testing.T) {
 	defer ts.Close()
 
 	type args struct {
-		request wallet.UpdateWalletDTO
+		request Wallet
 		enpoint string
 	}
 	tests := []struct {
 		name             string
 		args             args
-		want             domainwallet.WalletDTO
-		wantTransactions []domainwallet.TransactionDTO
+		want             Wallet
+		wantTransactions []Transaction
 		wantStatusCode   int
 	}{
 		{
 			name:             "update wallet, withdraw 100 to become 0",
-			args:             args{request: domainwallet.UpdateWalletDTO{Name: "wallet_one", Balance: 0}, enpoint: "/api/v1/wallets/1"},
-			want:             domainwallet.WalletDTO{ID: 1, Name: "wallet_one", Balance: 0},
-			wantTransactions: []domainwallet.TransactionDTO{{SenderID: 1, ReceiverID: 1, Amount: 100, Type: wallet.TranTypeWithdraw}},
+			args:             args{request: Wallet{Name: "wallet_one", Balance: 0}, enpoint: "/api/v1/wallets/1"},
+			want:             Wallet{ID: 1, Name: "wallet_one", Balance: 0},
+			wantTransactions: []Transaction{{SenderID: 1, ReceiverID: 1, Amount: 100, Type: string(wallet.TranTypeWithdraw)}},
 			wantStatusCode:   http.StatusOK,
 		},
 		{
-			name:           "update wallet, withdraw 300 to become negative",
-			args:           args{request: domainwallet.UpdateWalletDTO{Name: "wallet_two", Balance: -100}, enpoint: "/api/v1/wallets/2"},
+			name:           "update wallet withdraw 300 to become negative",
+			args:           args{request: Wallet{Name: "wallet_two", Balance: -100}, enpoint: "/api/v1/wallets/2"},
 			wantStatusCode: http.StatusUnprocessableEntity,
 		},
 		{
-			name:             "update wallet, deposit 100 to become 300",
-			args:             args{request: domainwallet.UpdateWalletDTO{Name: "wallet_two", Balance: 300}, enpoint: "/api/v1/wallets/2"},
-			want:             domainwallet.WalletDTO{ID: 2, Name: "wallet_two", Balance: 300},
-			wantTransactions: []domainwallet.TransactionDTO{{SenderID: 2, ReceiverID: 2, Amount: 100, Type: domainwallet.TranTypeDeposit}},
+			name:             "update wallet deposit 100 to become 300",
+			args:             args{request: Wallet{Name: "wallet_two", Balance: 300}, enpoint: "/api/v1/wallets/2"},
+			want:             Wallet{ID: 2, Name: "wallet_two", Balance: 300},
+			wantTransactions: []Transaction{{SenderID: 2, ReceiverID: 2, Amount: 100, Type: string(domainwallet.TranTypeDeposit)}},
 			wantStatusCode:   http.StatusOK,
 		},
 		{
 			name:           "update non existing wallet",
-			args:           args{request: domainwallet.UpdateWalletDTO{Name: "wallet_three", Balance: 300}, enpoint: "/api/v1/wallets/3"},
+			args:           args{request: Wallet{Name: "wallet_three", Balance: 300}, enpoint: "/api/v1/wallets/3"},
 			wantStatusCode: http.StatusUnprocessableEntity,
 		},
 	}
@@ -325,14 +325,14 @@ func TestUpdateWallet(t *testing.T) {
 			}
 
 			if tt.want.Name == "" {
-				var got domainwallet.WalletDTO
+				var got Wallet
 				if err := json.Unmarshal(result, &got); err == nil {
 					t.Fatalf("test %s: should not receive correct response from server", tt.name)
 				}
 				return
 			}
 
-			var got domainwallet.WalletDTO
+			var got Wallet
 			if err := json.Unmarshal(result, &got); err != nil {
 				t.Fatalf("test %s: error unmarshaling response: %s", tt.name, err.Error())
 			}
@@ -343,7 +343,7 @@ func TestUpdateWallet(t *testing.T) {
 
 			// test wallet in db
 			row := dbClient.Conn.QueryRowContext(ctx, `SELECT id, name, balance FROM wallet WHERE id = $1;`, got.ID)
-			var gotInDB domainwallet.WalletDTO
+			var gotInDB Wallet
 			switch err := row.Scan(&gotInDB.ID, &gotInDB.Name, &gotInDB.Balance); err {
 			case sql.ErrNoRows:
 				t.Fatalf("test %s: wallet was not created", tt.name)
@@ -354,13 +354,13 @@ func TestUpdateWallet(t *testing.T) {
 			}
 
 			// test transactions in db
-			var transactionsInDB []domainwallet.TransactionDTO
+			var transactionsInDB []Transaction
 
 			rows, err := dbClient.Conn.QueryContext(ctx, "SELECT sender_id, receiver_id, amount, tran_type FROM transaction WHERE sender_id = $1 OR receiver_id = $1 ORDER BY ID ASC", got.ID)
 			if err != nil {
 				t.Fatalf("test %s: error getting transactions from db: %s", tt.name, err.Error())
 			}
-			var tran domainwallet.TransactionDTO
+			var tran Transaction
 			for rows.Next() {
 				if len(tt.wantTransactions) == 0 {
 					t.Fatalf("test %s: expeted 0 transactions, got some in db", tt.name)
@@ -392,31 +392,31 @@ func TestCreateWallet(t *testing.T) {
 	defer ts.Close()
 
 	type args struct {
-		request wallet.CreateWalletDTO
+		request Wallet
 	}
 	tests := []struct {
 		name             string
 		args             args
-		want             domainwallet.WalletDTO
-		wantTransactions []domainwallet.TransactionDTO
+		want             Wallet
+		wantTransactions []Transaction
 		wantStatusCode   int
 	}{
 		{
 			name:           "create wallet with 0 balance",
-			args:           args{domainwallet.CreateWalletDTO{Name: "wallet_one"}},
-			want:           domainwallet.WalletDTO{Name: "wallet_one"},
+			args:           args{Wallet{Name: "wallet_one"}},
+			want:           Wallet{Name: "wallet_one"},
 			wantStatusCode: http.StatusCreated,
 		},
 		{
 			name:             "create wallet with 100 balance",
-			args:             args{domainwallet.CreateWalletDTO{Name: "wallet_two", Balance: 100}},
-			want:             domainwallet.WalletDTO{Name: "wallet_two", Balance: 100},
-			wantTransactions: []domainwallet.TransactionDTO{{Amount: 100, Type: domainwallet.TranTypeDeposit}},
+			args:             args{Wallet{Name: "wallet_two", Balance: 100}},
+			want:             Wallet{Name: "wallet_two", Balance: 100},
+			wantTransactions: []Transaction{{Amount: 100, Type: string(domainwallet.TranTypeDeposit)}},
 			wantStatusCode:   http.StatusCreated,
 		},
 		{
 			name:           "create wallet negative balance",
-			args:           args{domainwallet.CreateWalletDTO{Name: "wallet_three", Balance: -10}},
+			args:           args{Wallet{Name: "wallet_three", Balance: -10}},
 			wantStatusCode: http.StatusUnprocessableEntity,
 		},
 	}
@@ -438,14 +438,14 @@ func TestCreateWallet(t *testing.T) {
 			}
 
 			if tt.want.Name == "" {
-				var got domainwallet.WalletDTO
+				var got Wallet
 				if err := json.Unmarshal(result, &got); err == nil {
 					t.Fatalf("test %s: should not receive correct response from server", tt.name)
 				}
 				return
 			}
 
-			var got domainwallet.WalletDTO
+			var got Wallet
 			if err := json.Unmarshal(result, &got); err != nil {
 				t.Fatalf("test %s: error unmarshaling response: %s", tt.name, err.Error())
 			}
@@ -456,7 +456,7 @@ func TestCreateWallet(t *testing.T) {
 
 			// test wallet in db
 			row := dbClient.Conn.QueryRowContext(ctx, `SELECT id, name, balance FROM wallet WHERE id = $1;`, got.ID)
-			var gotInDB domainwallet.WalletDTO
+			var gotInDB Wallet
 			switch err := row.Scan(&gotInDB.ID, &gotInDB.Name, &gotInDB.Balance); err {
 			case sql.ErrNoRows:
 				t.Fatalf("test %s: wallet was not created", tt.name)
@@ -467,13 +467,13 @@ func TestCreateWallet(t *testing.T) {
 			}
 
 			// test transactions in db
-			var transactionsInDB []domainwallet.TransactionDTO
+			var transactionsInDB []Transaction
 
 			rows, err := dbClient.Conn.QueryContext(ctx, "SELECT amount, tran_type FROM transaction WHERE sender_id = $1 OR receiver_id = $1 ORDER BY ID ASC", got.ID)
 			if err != nil {
 				t.Fatalf("test %s: error getting transactions from db: %s", tt.name, err.Error())
 			}
-			var tran domainwallet.TransactionDTO
+			var tran Transaction
 			for rows.Next() {
 				if len(tt.wantTransactions) == 0 {
 					t.Fatalf("test %s: expeted 0 transactions, got some in db", tt.name)

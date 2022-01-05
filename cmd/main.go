@@ -11,6 +11,8 @@ import (
 	"github.com/skwol/wallet/pkg/logging"
 )
 
+const addr = ":8080"
+
 func main() {
 	logging.Init()
 	logger := logging.GetLogger()
@@ -71,7 +73,6 @@ func main() {
 	}
 	commonComposite.Handler.Register(router)
 
-	addr := ":8080"
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		logger.Fatal("Error occurred:", err.Error())

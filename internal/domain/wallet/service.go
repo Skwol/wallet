@@ -8,7 +8,7 @@ import (
 )
 
 type Service interface {
-	Create(context.Context, CreateWalletDTO) (WalletDTO, error)
+	Create(context.Context, *CreateWalletDTO) (WalletDTO, error)
 	GetByID(context.Context, int64) (WalletDTO, error)
 	GetByIDWithTransactions(context.Context, int64, int, int) (WalletDTO, error)
 	GetAll(ctx context.Context, limit int, offset int) ([]WalletDTO, error)
@@ -23,7 +23,7 @@ func NewService(storage Storage) (Service, error) {
 	return &service{storage: storage}, nil
 }
 
-func (s *service) Create(ctx context.Context, dto CreateWalletDTO) (WalletDTO, error) {
+func (s *service) Create(ctx context.Context, dto *CreateWalletDTO) (WalletDTO, error) {
 	var result WalletDTO
 	logger := logging.GetLogger()
 	dbWallet, err := s.storage.GetByName(ctx, dto.Name)
@@ -35,7 +35,7 @@ func (s *service) Create(ctx context.Context, dto CreateWalletDTO) (WalletDTO, e
 		logger.Errorf("wallet with name %s already exist", dto.Name)
 		return result, fmt.Errorf("wallet with name %s already exist", dto.Name)
 	}
-	walletModel, err := newWallet(&dto)
+	walletModel, err := newWallet(dto)
 	if err != nil {
 		logger.Errorf("error creating wallet model: %s", err.Error())
 		return result, fmt.Errorf("error creating wallet model: %w", err)
@@ -81,7 +81,8 @@ func (s *service) Update(ctx context.Context, id int64, walletDTO *UpdateWalletD
 		logger.Errorf("missing wallet in db")
 		return result, fmt.Errorf("missing wallet db")
 	}
-	wallet, err := walletInDB.toModel().Update(walletDTO)
+	walletModel := walletInDB.toModel()
+	wallet, err := walletModel.Update(walletDTO)
 	if err != nil {
 		logger.Errorf("error updating wallet model: %s", err.Error())
 		return result, fmt.Errorf("error updating wallet model: %w", err)

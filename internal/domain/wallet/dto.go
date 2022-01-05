@@ -13,15 +13,15 @@ func walletsToDTO(wallets []*Wallet) []WalletDTO {
 }
 
 type WalletDTO struct {
-	ID                  int64            `json:"id"`
-	Name                string           `json:"name"`
-	Balance             float64          `json:"balance"`
-	TransactionsToApply []TransactionDTO `json:"-"`
-	Transactions        []TransactionDTO `json:"transactions,omitempty"`
+	ID                  int64
+	Name                string
+	Balance             float64
+	TransactionsToApply []TransactionDTO
+	Transactions        []TransactionDTO
 }
 
-func (d WalletDTO) toModel() *Wallet {
-	return &Wallet{
+func (d WalletDTO) toModel() Wallet {
+	return Wallet{
 		ID:      d.ID,
 		Name:    d.Name,
 		Balance: d.Balance,
@@ -29,20 +29,19 @@ func (d WalletDTO) toModel() *Wallet {
 }
 
 type CreateWalletDTO struct {
-	Name    string  `json:"name"`
-	Balance float64 `json:"balance"`
+	Name    string
+	Balance float64
 }
 
 type UpdateWalletDTO struct {
-	Name    string  `json:"name"`
-	Balance float64 `json:"balance"`
+	CreateWalletDTO
 }
 
 type TransactionDTO struct {
-	ID         int64     `json:"id,omitempty"`
-	SenderID   int64     `json:"sender_id,omitempty"`
-	ReceiverID int64     `json:"receiver_id,omitempty"`
-	Amount     float64   `json:"amount,omitempty"`
-	Timestamp  time.Time `json:"timestamp,omitempty"`
-	Type       TranType  `json:"type,omitempty"`
+	ID         int64
+	SenderID   int64
+	ReceiverID int64
+	Amount     float64
+	Timestamp  time.Time
+	Type       TranType
 }

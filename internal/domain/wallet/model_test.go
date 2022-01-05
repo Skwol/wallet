@@ -29,21 +29,21 @@ func TestWallet_Update(t *testing.T) {
 		{
 			name:    "test balance less then zero",
 			fields:  fields{ID: 1},
-			args:    args{wallet: &UpdateWalletDTO{Balance: -1}},
+			args:    args{wallet: &UpdateWalletDTO{CreateWalletDTO: CreateWalletDTO{Balance: -1}}},
 			want:    nil,
 			wantErr: fmt.Errorf("balance can not be less then 0"),
 		},
 		{
 			name:    "test balance should be updated",
 			fields:  fields{ID: 1, Balance: 10},
-			args:    args{wallet: &UpdateWalletDTO{Balance: 10}},
+			args:    args{wallet: &UpdateWalletDTO{CreateWalletDTO: CreateWalletDTO{Balance: 10}}},
 			want:    nil,
 			wantErr: fmt.Errorf("balance should be updated"),
 		},
 		{
 			name:   "test OK set balance to zero",
 			fields: fields{ID: 1, Balance: 1},
-			args:   args{wallet: &UpdateWalletDTO{Balance: 0}},
+			args:   args{wallet: &UpdateWalletDTO{CreateWalletDTO: CreateWalletDTO{Balance: 0}}},
 			want: &Wallet{ID: 1, Balance: 0, TransactionsToApply: []Transaction{{
 				SenderID: 1, ReceiverID: 1, Amount: 1, Timestamp: timeNow(), Type: TranTypeWithdraw,
 			}}},
@@ -52,7 +52,7 @@ func TestWallet_Update(t *testing.T) {
 		{
 			name:   "test OK deposit",
 			fields: fields{ID: 1, Balance: 1},
-			args:   args{wallet: &UpdateWalletDTO{Balance: 20}},
+			args:   args{wallet: &UpdateWalletDTO{CreateWalletDTO: CreateWalletDTO{Balance: 20}}},
 			want: &Wallet{ID: 1, Balance: 20, TransactionsToApply: []Transaction{{
 				SenderID: 1, ReceiverID: 1, Amount: 19, Timestamp: timeNow(), Type: TranTypeDeposit,
 			}}},

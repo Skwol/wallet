@@ -56,7 +56,7 @@ func (h *handler) getWallet(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	response, err := json.Marshal(walletDTO)
+	response, err := json.Marshal(newWallet(walletDTO))
 	if err != nil {
 		logger.Errorf("error marshaling wallet: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error marshaling wallet: %s", err.Error()), http.StatusInternalServerError)
@@ -95,7 +95,8 @@ func (h *handler) getWalletWithTransactions(w http.ResponseWriter, r *http.Reque
 		http.Error(w, fmt.Sprintf("error returned from service: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
-	response, err := json.Marshal(walletDTO)
+
+	response, err := json.Marshal(newWallet(walletDTO))
 	if err != nil {
 		logger.Errorf("error marshaling wallet: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error marshaling wallet: %s", err.Error()), http.StatusInternalServerError)
@@ -120,20 +121,21 @@ func (h *handler) updateWallet(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("error reading request body: %s", err.Error()), http.StatusUnprocessableEntity)
 		return
 	}
-	var request wallet.UpdateWalletDTO
+	var request Wallet
 	if err := json.Unmarshal(body, &request); err != nil {
 		logger.Errorf("error unmarshaling request: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error unmarshaling request: %s", err.Error()), http.StatusUnprocessableEntity)
 		return
 	}
 
-	walletDTO, err := h.walletService.Update(r.Context(), id, &request)
+	updateRequest := request.toUpdateRequest()
+	walletDTO, err := h.walletService.Update(r.Context(), id, &updateRequest)
 	if err != nil {
 		logger.Errorf("error updating wallet: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error updating wallet: %s", err.Error()), http.StatusUnprocessableEntity)
 		return
 	}
-	response, err := json.Marshal(walletDTO)
+	response, err := json.Marshal(newWallet(walletDTO))
 	if err != nil {
 		logger.Errorf("error marshaling wallet: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error marshaling wallet: %s", err.Error()), http.StatusInternalServerError)
@@ -153,21 +155,22 @@ func (h *handler) createWallet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var request wallet.CreateWalletDTO
+	var request Wallet
 	if err := json.Unmarshal(body, &request); err != nil {
 		logger.Errorf("error unmarshaling request: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error unmarshaling request: %s", err.Error()), http.StatusUnprocessableEntity)
 		return
 	}
 
-	walletDTO, err := h.walletService.Create(r.Context(), request)
+	createRequest := request.toCreateRequest()
+	walletDTO, err := h.walletService.Create(r.Context(), &createRequest)
 	if err != nil {
 		logger.Errorf("error creating wallet: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error creating wallet: %s", err.Error()), http.StatusUnprocessableEntity)
 		return
 	}
 
-	response, err := json.Marshal(walletDTO)
+	response, err := json.Marshal(newWallet(walletDTO))
 	if err != nil {
 		logger.Errorf("error marshaling wallet: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error marshaling wallet: %s", err.Error()), http.StatusInternalServerError)
@@ -194,15 +197,19 @@ func (h *handler) getAllWallets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	wallets, err := h.walletService.GetAll(r.Context(), limit, offset)
+	walletDTOs, err := h.walletService.GetAll(r.Context(), limit, offset)
 	if err != nil {
 		logger.Errorf("error returned from service: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error returned from service: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
-	if len(wallets) == 0 {
+	if len(walletDTOs) == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		return
+	}
+	wallets := make([]Wallet, 0, len(walletDTOs))
+	for _, dto := range walletDTOs {
+		wallets = append(wallets, newWallet(dto))
 	}
 	response, err := json.Marshal(wallets)
 	if err != nil {
