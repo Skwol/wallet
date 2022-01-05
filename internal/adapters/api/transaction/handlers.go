@@ -27,10 +27,10 @@ func NewHandler(service transaction.Service) (adapters.Handler, error) {
 }
 
 func (h *handler) Register(router *mux.Router) {
-	router.HandleFunc(transactionURL, h.getTransaction).Methods("GET")
-	router.HandleFunc(transactionsURL, h.getAllTransactions).Methods("GET")
+	router.HandleFunc(transactionURL, h.getTransaction).Methods(http.MethodGet)
+	router.HandleFunc(transactionsURL, h.getAllTransactions).Methods(http.MethodGet)
 
-	router.HandleFunc(transactionsURL, h.getFilteredTransactions).Methods("POST")
+	router.HandleFunc(transactionsURL, h.getFilteredTransactions).Methods(http.MethodPost)
 }
 
 func (h *handler) getTransaction(w http.ResponseWriter, r *http.Request) {
@@ -42,13 +42,17 @@ func (h *handler) getTransaction(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("error parsing id: %s", err.Error()), http.StatusUnprocessableEntity)
 		return
 	}
-	walletDTO, err := h.transactionService.GetByID(r.Context(), id)
+	transactionDTO, err := h.transactionService.GetByID(r.Context(), id)
 	if err != nil {
 		logger.Errorf("error returned from service: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error returned from service: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
-	response, err := json.Marshal(walletDTO)
+	if transactionDTO.ID == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+	response, err := json.Marshal(transactionDTO)
 	if err != nil {
 		logger.Errorf("error marshaling transaction: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error marshaling transaction: %s", err.Error()), http.StatusInternalServerError)
@@ -78,6 +82,10 @@ func (h *handler) getAllTransactions(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Errorf("error returned from service: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error returned from service: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
+	if len(transactions) == 0 {
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 	response, err := json.Marshal(transactions)
@@ -123,6 +131,10 @@ func (h *handler) getFilteredTransactions(w http.ResponseWriter, r *http.Request
 	if err != nil {
 		logger.Errorf("error returned from service: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error returned from service: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
+	if len(transactions) == 0 {
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 	response, err := json.Marshal(transactions)

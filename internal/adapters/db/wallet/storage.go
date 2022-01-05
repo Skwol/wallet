@@ -34,8 +34,8 @@ type dbTransaction struct {
 	Type       wallet.TranType `json:"type,omitempty"`
 }
 
-func (db dbTransaction) ToDTO() *wallet.TransactionDTO {
-	return &wallet.TransactionDTO{
+func (db dbTransaction) ToDTO() wallet.TransactionDTO {
+	return wallet.TransactionDTO{
 		ID:         db.ID,
 		SenderID:   db.SenderID,
 		ReceiverID: db.ReceiverID,
@@ -59,7 +59,7 @@ func (as *walletStorage) Create(ctx context.Context, dto wallet.WalletDTO) (wall
 		return dto, err
 	}
 
-	row := tx.QueryRow("INSERT INTO wallet (name, balance) VALUES ($1, $2) RETURNING id;", dto.Name, dto.Balance)
+	row := tx.QueryRowContext(ctx, "INSERT INTO wallet (name, balance) VALUES ($1, $2) RETURNING id;", dto.Name, dto.Balance)
 
 	if err = row.Scan(&dto.ID); err != nil {
 		tx.Rollback()
@@ -83,7 +83,7 @@ func (as *walletStorage) Create(ctx context.Context, dto wallet.WalletDTO) (wall
 
 func (as *walletStorage) GetByID(ctx context.Context, id int64) (wallet.WalletDTO, error) {
 	query := `SELECT id, name, balance FROM wallet WHERE id = $1;`
-	row := as.db.Conn.QueryRow(query, id)
+	row := as.db.Conn.QueryRowContext(ctx, query, id)
 	var walletInDB dbWallet
 	switch err := row.Scan(&walletInDB.ID, &walletInDB.Name, &walletInDB.Balance); err {
 	case sql.ErrNoRows:
@@ -99,7 +99,7 @@ func (as *walletStorage) GetByIDWithTransactions(ctx context.Context, id int64, 
 		return wallet.WalletDTO{}, fmt.Errorf("error beginning transaction: %w", err)
 	}
 	query := `SELECT id, name, balance FROM wallet WHERE id = $1;`
-	row := as.db.Conn.QueryRow(query, id)
+	row := as.db.Conn.QueryRowContext(ctx, query, id)
 	var walletInDB dbWallet
 	if err := row.Scan(&walletInDB.ID, &walletInDB.Name, &walletInDB.Balance); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -114,7 +114,7 @@ func (as *walletStorage) GetByIDWithTransactions(ctx context.Context, id int64, 
 		return wallet.WalletDTO{}, err
 	}
 	var (
-		list []*wallet.TransactionDTO
+		list []wallet.TransactionDTO
 		tran dbTransaction
 	)
 	for rows.Next() {
@@ -134,7 +134,7 @@ func (as *walletStorage) GetByIDWithTransactions(ctx context.Context, id int64, 
 
 func (as *walletStorage) GetByName(ctx context.Context, name string) (wallet.WalletDTO, error) {
 	query := `SELECT id FROM wallet WHERE name = $1;`
-	row := as.db.Conn.QueryRow(query, name)
+	row := as.db.Conn.QueryRowContext(ctx, query, name)
 	var walletInDB dbWallet
 	switch err := row.Scan(&walletInDB.ID); err {
 	case sql.ErrNoRows:

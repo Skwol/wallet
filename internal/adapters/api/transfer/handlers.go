@@ -23,7 +23,7 @@ func NewHandler(service transfer.Service) (adapters.Handler, error) {
 }
 
 func (h *handler) Register(router *mux.Router) {
-	router.HandleFunc(transferURL, h.createTransfer).Methods("POST")
+	router.HandleFunc(transferURL, h.createTransfer).Methods(http.MethodPost)
 }
 
 func (h *handler) createTransfer(w http.ResponseWriter, r *http.Request) {
@@ -57,5 +57,6 @@ func (h *handler) createTransfer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.WriteHeader(http.StatusCreated)
 	w.Write(response)
 }

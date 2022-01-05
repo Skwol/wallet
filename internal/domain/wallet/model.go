@@ -42,7 +42,7 @@ func newWallet(dto *CreateWalletDTO) (*Wallet, error) {
 }
 
 func (w Wallet) toDTO() WalletDTO {
-	transactionsToApply := make([]*TransactionDTO, len(w.TransactionsToApply))
+	transactionsToApply := make([]TransactionDTO, len(w.TransactionsToApply))
 	for i, tran := range w.TransactionsToApply {
 		transactionsToApply[i] = tran.toDTO()
 	}
@@ -88,8 +88,8 @@ type Transaction struct {
 	Type       TranType
 }
 
-func (t Transaction) toDTO() *TransactionDTO {
-	return &TransactionDTO{
+func (t Transaction) toDTO() TransactionDTO {
+	return TransactionDTO{
 		ID:         t.ID,
 		SenderID:   t.SenderID,
 		ReceiverID: t.ReceiverID,

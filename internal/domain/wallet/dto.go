@@ -13,11 +13,11 @@ func walletsToDTO(wallets []*Wallet) []WalletDTO {
 }
 
 type WalletDTO struct {
-	ID                  int64             `json:"id"`
-	Name                string            `json:"name"`
-	Balance             float64           `json:"balance"`
-	TransactionsToApply []*TransactionDTO `json:"-"`
-	Transactions        []*TransactionDTO `json:"transactions,omitempty"`
+	ID                  int64            `json:"id"`
+	Name                string           `json:"name"`
+	Balance             float64          `json:"balance"`
+	TransactionsToApply []TransactionDTO `json:"-"`
+	Transactions        []TransactionDTO `json:"transactions,omitempty"`
 }
 
 func (d WalletDTO) toModel() *Wallet {

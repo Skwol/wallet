@@ -1,10 +1,7 @@
 package transaction
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"strings"
 	"time"
 
@@ -50,8 +47,6 @@ func (s transactionFilter) Empty() bool {
 }
 
 func (s transactionFilter) BuildQuery(limit, offset int) string {
-	var query strings.Builder
-	query.WriteString("SELECT * FROM transaction WHERE")
 	var filters []string
 	if !s.senderID.Empty() {
 		filters = append(filters, s.senderID.Build("sender_id"))
@@ -68,30 +63,14 @@ func (s transactionFilter) BuildQuery(limit, offset int) string {
 	if !s.transactionType.Empty() {
 		filters = append(filters, s.transactionType.Build("tran_type"))
 	}
-	return fmt.Sprintf("%s %s ORDER BY ID DESC LIMIT %d OFFSET %d;", query.String(), strings.Join(filters, " AND "), limit, offset)
-}
-
-func (s *transactionFilter) Bind(r *http.Request) error {
-	return nil
+	var filter string
+	if len(filters) > 0 {
+		filter = fmt.Sprintf("WHERE %s ", strings.Join(filters, " AND "))
+	}
+	return fmt.Sprintf("SELECT id, sender_id, receiver_id, amount, date, tran_type FROM transaction %sORDER BY id ASC LIMIT %d OFFSET %d;", filter, limit, offset)
 }
 
 type stringFilter []string
-
-func (f stringFilter) UnmarshalJSON(data []byte) error {
-	if bytes.Equal(data, []byte(`""`)) {
-		return nil
-	}
-	var v []string
-	if err := json.Unmarshal(data, &v); err != nil {
-		return err
-	}
-	f = v
-	return nil
-}
-
-func (f stringFilter) MarshalJSON() ([]byte, error) {
-	return json.Marshal(f)
-}
 
 func newStringFilter(values ...string) stringFilter {
 	return values
@@ -111,22 +90,6 @@ func (f stringFilter) Build(fieldName string) string {
 
 type int64Filter []int64
 
-func (f int64Filter) UnmarshalJSON(data []byte) error {
-	if bytes.Equal(data, []byte(`""`)) {
-		return nil
-	}
-	var v []int64
-	if err := json.Unmarshal(data, &v); err != nil {
-		return err
-	}
-	f = v
-	return nil
-}
-
-func (f int64Filter) MarshalJSON() ([]byte, error) {
-	return json.Marshal(f)
-}
-
 func newInt64Filter(values ...int64) int64Filter {
 	return values
 }
@@ -144,8 +107,8 @@ func (f int64Filter) Build(fieldName string) string {
 }
 
 type floatRangeFilter struct {
-	From float64 `json:"from"`
-	To   float64 `json:"to"`
+	From float64
+	To   float64
 }
 
 func newFloatRangeFilter(from, to float64) *floatRangeFilter {
@@ -160,12 +123,17 @@ func (f *floatRangeFilter) Empty() bool {
 }
 
 func (f floatRangeFilter) Build(fieldName string) string {
+	if f.From > 0 && f.To == 0 {
+		return fmt.Sprintf("%s > %f", fieldName, f.From)
+	} else if f.From == 0 && f.To > 0 {
+		return fmt.Sprintf("%s < %f", fieldName, f.To)
+	}
 	return fmt.Sprintf("%s BETWEEN %f AND %f", fieldName, f.From, f.To)
 }
 
 type dateRangeFilter struct {
-	From time.Time `json:"from"`
-	To   time.Time `json:"to"`
+	From time.Time
+	To   time.Time
 }
 
 func newDateRangeFilter(from, to time.Time) *dateRangeFilter {
@@ -180,5 +148,10 @@ func (f *dateRangeFilter) Empty() bool {
 }
 
 func (f dateRangeFilter) Build(fieldName string) string {
+	if !f.From.IsZero() && f.To.IsZero() {
+		return fmt.Sprintf("%s > '%s'", fieldName, f.From.Format("2006-01-02 15:04:05"))
+	} else if f.From.IsZero() && !f.To.IsZero() {
+		return fmt.Sprintf("%s < '%s'", fieldName, f.To.Format("2006-01-02 15:04:05"))
+	}
 	return fmt.Sprintf("%s BETWEEN '%s' AND '%s'", fieldName, f.From.Format("2006-01-02 15:04:05"), f.To.Format("2006-01-02 15:04:05"))
 }

@@ -1,0 +1,5 @@
+FROM golang:1.17.5-alpine3.15
+COPY . /go/src/github.com/skwol/wallet
+WORKDIR /go/src/github.com/skwol/wallet
+ENV CGO_ENABLED=0
+ENTRYPOINT ["go", "test", "-p", "1", "./..."]

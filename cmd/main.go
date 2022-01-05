@@ -22,7 +22,25 @@ func main() {
 	logger.Info("create db composite")
 	db, err := composites.NewPgDBComposite(ctx)
 	if err != nil {
-		logger.Fatal("db composite failed: ", err.Error())
+		// sloppy workaround initial container start
+		ticker := time.NewTicker(3 * time.Second)
+		ctxToReconnect, cancel := context.WithTimeout(ctx, time.Second*12)
+	LOOP:
+		for {
+			select {
+			case <-ctxToReconnect.Done():
+				cancel()
+				break LOOP
+			case <-ticker.C:
+				db, err = composites.NewPgDBComposite(ctx)
+			}
+			if err == nil {
+				break
+			}
+		}
+		if err != nil {
+			logger.Fatal("db composite failed: ", err.Error())
+		}
 	}
 
 	logger.Info("create transaction composite")

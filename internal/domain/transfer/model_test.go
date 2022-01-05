@@ -39,7 +39,7 @@ func Test_createTransfer(t *testing.T) {
 			wantErr: fmt.Errorf("amount should be greater then 0"),
 		},
 		{
-			name:    "test missing amount",
+			name:    "test negative amount",
 			args:    args{dto: &CreateTransferDTO{Amount: -1, Receiver: WalletDTO{ID: 1}, Sender: WalletDTO{ID: 2}}},
 			want:    nil,
 			wantErr: fmt.Errorf("amount should be greater then 0"),

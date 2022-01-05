@@ -31,7 +31,7 @@ func (s *service) Create(ctx context.Context, dto CreateWalletDTO) (WalletDTO, e
 		logger.Errorf("error getting wallet from db: %s", err.Error())
 		return result, fmt.Errorf("error getting wallet from db: %w", err)
 	}
-	if dbWallet.ID == 0 {
+	if dbWallet.ID != 0 {
 		logger.Errorf("wallet with name %s already exist", dto.Name)
 		return result, fmt.Errorf("wallet with name %s already exist", dto.Name)
 	}

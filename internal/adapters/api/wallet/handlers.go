@@ -28,13 +28,13 @@ func NewHandler(service wallet.Service) (adapters.Handler, error) {
 }
 
 func (h *handler) Register(router *mux.Router) {
-	router.HandleFunc(walletsURL, h.getAllWallets).Methods("GET")
-	router.HandleFunc(walletURL, h.getWallet).Methods("GET")
-	router.HandleFunc(walletWithTransactionsURL, h.getWalletWithTransactions).Methods("GET")
+	router.HandleFunc(walletsURL, h.getAllWallets).Methods(http.MethodGet)
+	router.HandleFunc(walletURL, h.getWallet).Methods(http.MethodGet)
+	router.HandleFunc(walletWithTransactionsURL, h.getWalletWithTransactions).Methods(http.MethodGet)
 
-	router.HandleFunc(walletURL, h.updateWallet).Methods("PATCH")
+	router.HandleFunc(walletURL, h.updateWallet).Methods(http.MethodPatch)
 
-	router.HandleFunc(walletsURL, h.createWallet).Methods("POST")
+	router.HandleFunc(walletsURL, h.createWallet).Methods(http.MethodPost)
 }
 
 func (h *handler) getWallet(w http.ResponseWriter, r *http.Request) {
@@ -50,6 +50,10 @@ func (h *handler) getWallet(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Errorf("error returned from service: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error returned from service: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
+	if walletDTO.ID == 0 {
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 	response, err := json.Marshal(walletDTO)
@@ -170,6 +174,7 @@ func (h *handler) createWallet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.WriteHeader(http.StatusCreated)
 	w.Write(response)
 }
 
@@ -193,6 +198,10 @@ func (h *handler) getAllWallets(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Errorf("error returned from service: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error returned from service: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
+	if len(wallets) == 0 {
+		w.WriteHeader(http.StatusNotFound)
 		return
 	}
 	response, err := json.Marshal(wallets)

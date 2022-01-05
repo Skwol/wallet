@@ -17,7 +17,7 @@ type PgDBComposite struct {
 }
 
 func NewPgDBComposite(ctx context.Context) (*PgDBComposite, error) {
-	client, err := pgdb.NewClient()
+	client, err := pgdb.NewClient("production")
 	if err != nil {
 		return nil, fmt.Errorf("error getting psql client: %w", err)
 	}
