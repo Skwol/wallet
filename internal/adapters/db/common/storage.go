@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"sync"
 	"time"
 
 	"github.com/skwol/wallet/internal/domain/common"
@@ -20,40 +21,46 @@ func NewStorage(db *pgdb.PGDB) (common.Storage, error) {
 }
 
 func (cs *commonStorage) GenerateFakeData(ctx context.Context) error {
-	tx, err := cs.db.Conn.BeginTx(ctx, nil)
-	if err != nil {
-		return fmt.Errorf("error beginning transaction")
-	}
-
 	rand.Seed(time.Now().UnixNano())
-	balances := randFloats(0, 1200, 100)
+	var wg sync.WaitGroup
 
-	var walletID int64
-	for i, walletBalance := range balances {
-		walletName := fmt.Sprintf("wallet_%d", i+1)
+	generateData := func(ctx context.Context, start, end int) error {
+		defer wg.Done()
+		for i := start; i <= end; i++ {
+			select {
+			case <-ctx.Done():
+				return nil
+			default:
+				walletName := fmt.Sprintf("wallet_%d", i+1)
+				walletBalance := randFloat(1, 1200)
 
-		row := tx.QueryRow("INSERT INTO wallet (name, balance) VALUES ($1, $2) RETURNING id;", walletName, walletBalance)
-		if err = row.Scan(&walletID); err != nil {
-			tx.Rollback()
-			return err
+				if _, err := cs.db.Conn.ExecContext(ctx, "INSERT INTO wallet (id, name, balance) VALUES ($1, $2, $3);", i, walletName, walletBalance); err != nil {
+					return err
+				}
+
+				if _, err := cs.db.Conn.ExecContext(ctx, "INSERT INTO transaction (sender_id, receiver_id, amount, date, tran_type) VALUES ($1, $1, $2, current_timestamp, $3);", i, walletBalance, transaction.TranTypeDeposit); err != nil {
+					return err
+				}
+			}
 		}
-		_, err = tx.ExecContext(ctx, "INSERT INTO transaction (sender_id, receiver_id, amount, date, tran_type) VALUES ($1, $1, $2, current_timestamp, $3);", walletID, walletBalance, transaction.TranTypeDeposit)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
+		return nil
 	}
 
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("error commiting transaction, rolled back")
+	ctxForData, cancel := context.WithTimeout(context.Background(), time.Minute*25)
+	defer cancel()
+
+	numberOfRecords := 2000000
+	numberOfBatches := 20
+	recPerBatch := numberOfRecords / numberOfBatches
+
+	for i := 1; i <= numberOfBatches; i++ {
+		wg.Add(1)
+		go generateData(ctxForData, recPerBatch*i-recPerBatch+1, recPerBatch*i)
 	}
+	wg.Wait()
 	return nil
 }
 
-func randFloats(min, max float64, n int) []float64 {
-	res := make([]float64, n)
-	for i := range res {
-		res[i] = min + rand.Float64()*(max-min)
-	}
-	return res
+func randFloat(min, max float64) float64 {
+	return min + rand.Float64()*(max-min)
 }
