@@ -127,7 +127,7 @@ func TestCreateTransfer(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resp, err := http.DefaultClient.Do(newReq(t, http.MethodPost, ts.URL+"/api/v1/transfers", tt.args.request))
+			resp, err := http.DefaultClient.Do(newReq(t, http.MethodPost, ts.URL+"/api/v1/transfers?test=1", tt.args.request))
 			if err != nil {
 				t.Fatalf("test %s: error getting response: %s", tt.name, err.Error())
 			}

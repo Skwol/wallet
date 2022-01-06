@@ -134,13 +134,13 @@ func TestGetWallets(t *testing.T) {
 	}{
 		{
 			name:           "no wallet",
-			args:           args{endpoint: fmt.Sprintf("%s/api/v1/wallets/5", ts.URL)},
+			args:           args{endpoint: fmt.Sprintf("%s/api/v1/wallets/5?test=1", ts.URL)},
 			wantStatusCode: http.StatusNotFound,
 			singleValue:    true,
 		},
 		{
 			name: "wallet without transactions",
-			args: args{endpoint: fmt.Sprintf("%s/api/v1/wallets/1", ts.URL)},
+			args: args{endpoint: fmt.Sprintf("%s/api/v1/wallets/1?test=1", ts.URL)},
 			want: []Wallet{
 				{ID: 1, Name: "test_wallet_one", Balance: 100},
 			},
@@ -149,7 +149,7 @@ func TestGetWallets(t *testing.T) {
 		},
 		{
 			name: "all wallets",
-			args: args{endpoint: fmt.Sprintf("%s/api/v1/wallets?limit=10&offset=0", ts.URL)},
+			args: args{endpoint: fmt.Sprintf("%s/api/v1/wallets?limit=10&offset=0&test=1", ts.URL)},
 			want: []Wallet{
 				{ID: 1, Name: "test_wallet_one", Balance: 100},
 				{ID: 2, Name: "test_wallet_two", Balance: 200},
@@ -160,7 +160,7 @@ func TestGetWallets(t *testing.T) {
 		},
 		{
 			name: "all wallets limited",
-			args: args{endpoint: fmt.Sprintf("%s/api/v1/wallets?limit=1&offset=1", ts.URL)},
+			args: args{endpoint: fmt.Sprintf("%s/api/v1/wallets?limit=1&offset=1&test=1", ts.URL)},
 			want: []Wallet{
 				{ID: 2, Name: "test_wallet_two", Balance: 200},
 			},
@@ -168,12 +168,12 @@ func TestGetWallets(t *testing.T) {
 		},
 		{
 			name:           "all wallets no results",
-			args:           args{endpoint: fmt.Sprintf("%s/api/v1/wallets?limit=10&offset=4", ts.URL)},
+			args:           args{endpoint: fmt.Sprintf("%s/api/v1/wallets?limit=10&offset=4&test=1", ts.URL)},
 			wantStatusCode: http.StatusNotFound,
 		},
 		{
 			name: "wallet with all transactions",
-			args: args{endpoint: fmt.Sprintf("%s/api/v1/wallets-with-transactions/1?limit=10&offset=0", ts.URL)},
+			args: args{endpoint: fmt.Sprintf("%s/api/v1/wallets-with-transactions/1?limit=10&offset=0&test=1", ts.URL)},
 			want: []Wallet{
 				{ID: 1, Name: "test_wallet_one", Balance: 100, Transactions: []Transaction{
 					{ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranOneDate, Type: string(domainwallet.TranTypeDeposit)},
@@ -186,7 +186,7 @@ func TestGetWallets(t *testing.T) {
 		},
 		{
 			name: "wallet with all transactions limited with offset",
-			args: args{endpoint: fmt.Sprintf("%s/api/v1/wallets-with-transactions/1?limit=1&offset=1", ts.URL)},
+			args: args{endpoint: fmt.Sprintf("%s/api/v1/wallets-with-transactions/1?limit=1&offset=1&test=1", ts.URL)},
 			want: []Wallet{
 				{ID: 1, Name: "test_wallet_one", Balance: 100, Transactions: []Transaction{
 					{ID: 2, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranTwoDate, Type: string(domainwallet.TranTypeTransfer)},
@@ -197,7 +197,7 @@ func TestGetWallets(t *testing.T) {
 		},
 		{
 			name: "wallet with all transactions limited with offset out of values",
-			args: args{endpoint: fmt.Sprintf("%s/api/v1/wallets-with-transactions/1?limit=1&offset=10", ts.URL)},
+			args: args{endpoint: fmt.Sprintf("%s/api/v1/wallets-with-transactions/1?limit=1&offset=10&test=1", ts.URL)},
 			want: []Wallet{
 				{ID: 1, Name: "test_wallet_one", Balance: 100},
 			},
@@ -283,26 +283,26 @@ func TestUpdateWallet(t *testing.T) {
 	}{
 		{
 			name:             "update wallet, withdraw 100 to become 0",
-			args:             args{request: Wallet{Name: "wallet_one", Balance: 0}, enpoint: "/api/v1/wallets/1"},
+			args:             args{request: Wallet{Name: "wallet_one", Balance: 0}, enpoint: "/api/v1/wallets/1?test=1"},
 			want:             Wallet{ID: 1, Name: "wallet_one", Balance: 0},
 			wantTransactions: []Transaction{{SenderID: 1, ReceiverID: 1, Amount: 100, Type: string(wallet.TranTypeWithdraw)}},
 			wantStatusCode:   http.StatusOK,
 		},
 		{
 			name:           "update wallet withdraw 300 to become negative",
-			args:           args{request: Wallet{Name: "wallet_two", Balance: -100}, enpoint: "/api/v1/wallets/2"},
+			args:           args{request: Wallet{Name: "wallet_two", Balance: -100}, enpoint: "/api/v1/wallets/2?test=1"},
 			wantStatusCode: http.StatusUnprocessableEntity,
 		},
 		{
 			name:             "update wallet deposit 100 to become 300",
-			args:             args{request: Wallet{Name: "wallet_two", Balance: 300}, enpoint: "/api/v1/wallets/2"},
+			args:             args{request: Wallet{Name: "wallet_two", Balance: 300}, enpoint: "/api/v1/wallets/2?test=1"},
 			want:             Wallet{ID: 2, Name: "wallet_two", Balance: 300},
 			wantTransactions: []Transaction{{SenderID: 2, ReceiverID: 2, Amount: 100, Type: string(domainwallet.TranTypeDeposit)}},
 			wantStatusCode:   http.StatusOK,
 		},
 		{
 			name:           "update non existing wallet",
-			args:           args{request: Wallet{Name: "wallet_three", Balance: 300}, enpoint: "/api/v1/wallets/3"},
+			args:           args{request: Wallet{Name: "wallet_three", Balance: 300}, enpoint: "/api/v1/wallets/3?test=1"},
 			wantStatusCode: http.StatusUnprocessableEntity,
 		},
 	}
@@ -422,7 +422,7 @@ func TestCreateWallet(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resp, err := http.DefaultClient.Do(newReq(t, http.MethodPost, ts.URL+"/api/v1/wallets", tt.args.request))
+			resp, err := http.DefaultClient.Do(newReq(t, http.MethodPost, ts.URL+"/api/v1/wallets?test=1", tt.args.request))
 			if err != nil {
 				t.Fatalf("test %s: error getting response: %s", tt.name, err.Error())
 			}

@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/skwol/wallet/internal/composites"
 	"github.com/skwol/wallet/pkg/logging"
+	"github.com/skwol/wallet/pkg/middleware"
 )
 
 const addr = ":8080"
@@ -20,6 +21,7 @@ func main() {
 
 	logger.Info("router initialization")
 	router := mux.NewRouter()
+	router.Use(middleware.LimitPerUserByIP)
 
 	logger.Info("create db composite")
 	db, err := composites.NewPgDBComposite(ctx)

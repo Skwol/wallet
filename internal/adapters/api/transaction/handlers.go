@@ -103,6 +103,7 @@ func (h *handler) getAllTransactions(w http.ResponseWriter, r *http.Request) {
 
 func (h *handler) getFilteredTransactions(w http.ResponseWriter, r *http.Request) {
 	logger := logging.GetLogger()
+
 	limit, err := strconv.Atoi(r.FormValue("limit"))
 	if err != nil {
 		logger.Errorf("error parsing limit query param: %s", err.Error())

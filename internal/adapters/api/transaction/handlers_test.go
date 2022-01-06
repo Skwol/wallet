@@ -132,7 +132,7 @@ func TestGetTransaction(t *testing.T) {
 	ts := httptest.NewServer(router)
 	defer ts.Close()
 
-	resp, err := http.DefaultClient.Do(newReq(t, http.MethodGet, ts.URL+"/api/v1/transactions/2", nil))
+	resp, err := http.DefaultClient.Do(newReq(t, http.MethodGet, ts.URL+"/api/v1/transactions/2?test=1", nil))
 	if err != nil {
 		t.Fatalf("error getting response: %s", err.Error())
 	}
@@ -140,7 +140,7 @@ func TestGetTransaction(t *testing.T) {
 		t.Fatalf("expected status %d, got %d", http.StatusNotFound, resp.StatusCode)
 	}
 
-	resp, err = http.DefaultClient.Do(newReq(t, http.MethodGet, ts.URL+"/api/v1/transactions/1", nil))
+	resp, err = http.DefaultClient.Do(newReq(t, http.MethodGet, ts.URL+"/api/v1/transactions/1?test=1", nil))
 	if err != nil {
 		t.Fatalf("error getting response: %s", err.Error())
 	}
@@ -209,7 +209,7 @@ func TestGetTransactions(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			resp, err := http.DefaultClient.Do(newReq(t, http.MethodGet, fmt.Sprintf("%s/api/v1/transactions?limit=%d&offset=%d", ts.URL, tt.args.limit, tt.args.offset), nil))
+			resp, err := http.DefaultClient.Do(newReq(t, http.MethodGet, fmt.Sprintf("%s/api/v1/transactions?limit=%d&offset=%d&test=1", ts.URL, tt.args.limit, tt.args.offset), nil))
 			if err != nil {
 				t.Fatalf("test %s: error getting response: %s", tt.name, err.Error())
 			}
@@ -415,7 +415,7 @@ func TestGetTransactions(t *testing.T) {
 	}
 	for _, tt := range testsFilters {
 		t.Run(tt.name, func(t *testing.T) {
-			resp, err := http.DefaultClient.Do(newReq(t, http.MethodPost, fmt.Sprintf("%s/api/v1/transactions?limit=%d&offset=%d", ts.URL, tt.args.limit, tt.args.offset), tt.request))
+			resp, err := http.DefaultClient.Do(newReq(t, http.MethodPost, fmt.Sprintf("%s/api/v1/transactions?limit=%d&offset=%d&test=1", ts.URL, tt.args.limit, tt.args.offset), tt.request))
 			if err != nil {
 				t.Fatalf("test %s: error getting response: %s", tt.name, err.Error())
 			}
