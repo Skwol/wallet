@@ -20,7 +20,7 @@ func NewStorage(db *pgdb.PGDB) (common.Storage, error) {
 	return &commonStorage{db: db}, nil
 }
 
-func (cs *commonStorage) GenerateFakeData(ctx context.Context) error {
+func (cs *commonStorage) GenerateFakeData(ctx context.Context, numberOfRecordsToCreate int) error {
 	rand.Seed(time.Now().UnixNano())
 	var wg sync.WaitGroup
 
@@ -49,9 +49,8 @@ func (cs *commonStorage) GenerateFakeData(ctx context.Context) error {
 	ctxForData, cancel := context.WithTimeout(context.Background(), time.Minute*25)
 	defer cancel()
 
-	numberOfRecords := 2000000
 	numberOfBatches := 20
-	recPerBatch := numberOfRecords / numberOfBatches
+	recPerBatch := numberOfRecordsToCreate / numberOfBatches
 
 	for i := 1; i <= numberOfBatches; i++ {
 		wg.Add(1)

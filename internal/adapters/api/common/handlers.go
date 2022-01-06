@@ -1,7 +1,9 @@
 package common
 
 import (
+	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	adapters "github.com/skwol/wallet/internal/adapters/api"
@@ -26,24 +28,27 @@ func NewHandler(service common.Service) (adapters.Handler, error) {
 }
 
 func (h *handler) Register(router *mux.Router) {
-	router.HandleFunc(generateFakeDataURL, limit(h.generateFakeData)).Methods("POST")
-}
-
-func limit(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if !limiter.Allow() {
-			http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
-			return
-		}
-		next(w, r)
-	}
+	router.HandleFunc(generateFakeDataURL, h.generateFakeData).Methods("POST")
 }
 
 func (h *handler) generateFakeData(w http.ResponseWriter, r *http.Request) {
 	logger := logging.GetLogger()
 	ctx := r.Context()
+
+	numberOfRecordsToCreate, err := strconv.Atoi(r.FormValue("records"))
+	if err != nil {
+		logger.Errorf("error parsing records query param: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error parsing records query param: %s", err.Error()), http.StatusUnprocessableEntity)
+		return
+	}
+
+	if !limiter.Allow() {
+		http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
+		return
+	}
+
 	go func() {
-		if err := h.service.GenerateFakeData(ctx); err != nil {
+		if err := h.service.GenerateFakeData(ctx, numberOfRecordsToCreate); err != nil {
 			logger.Errorf("error during generating data: %s", err.Error())
 			return
 		}

@@ -1,10 +1,13 @@
 package transaction
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/skwol/wallet/internal/domain/transaction"
 )
+
+var csvHeaders = []string{"Transaction ID", "Sender ID", "Receiver ID", "Amount", "Timestamp", "Type"}
 
 func newTransaction(dto transaction.TransactionDTO) Transaction {
 	return Transaction{
@@ -24,6 +27,10 @@ type Transaction struct {
 	Amount     float64   `json:"amount"`
 	Timestamp  time.Time `json:"timestamp"`
 	Type       string    `json:"type"`
+}
+
+func (t Transaction) toCsv() []string {
+	return []string{fmt.Sprintf("%d", t.ID), fmt.Sprintf("%d", t.SenderID), fmt.Sprintf("%d", t.ReceiverID), fmt.Sprintf("%f", t.Amount), t.Timestamp.Format("Mon, 02 Jan 2006 15:04:05 -0700"), t.Type}
 }
 
 type Filter struct {
