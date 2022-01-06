@@ -41,7 +41,7 @@ migrate -database ${POSTGRESQL_URL} -path db/migrations down
 
 There is an endpoint that allows to generate some amount of wallets and transactions:
 ```
-curl -X POST http://localhost:8080/api/v1/generate_fake_data?records=500
+curl -X POST 'http://localhost:8080/api/v1/generate_fake_data?records=500'
 ```
 Use `records` query param to decide how many wallets you need. This request should only be used when there is an empty DB with migrations run.
 
