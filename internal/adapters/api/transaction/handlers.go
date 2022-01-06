@@ -52,7 +52,7 @@ func (h *handler) getTransaction(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 		return
 	}
-	response, err := json.Marshal(transactionDTO)
+	response, err := json.Marshal(newTransaction(transactionDTO))
 	if err != nil {
 		logger.Errorf("error marshaling transaction: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error marshaling transaction: %s", err.Error()), http.StatusInternalServerError)
@@ -78,15 +78,19 @@ func (h *handler) getAllTransactions(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	transactions, err := h.transactionService.GetAll(r.Context(), limit, offset)
+	transactionDTOs, err := h.transactionService.GetAll(r.Context(), limit, offset)
 	if err != nil {
 		logger.Errorf("error returned from service: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error returned from service: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
-	if len(transactions) == 0 {
+	if len(transactionDTOs) == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		return
+	}
+	transactions := make([]Transaction, 0, len(transactionDTOs))
+	for _, dto := range transactionDTOs {
+		transactions = append(transactions, newTransaction(dto))
 	}
 	response, err := json.Marshal(transactions)
 	if err != nil {
@@ -120,22 +124,27 @@ func (h *handler) getFilteredTransactions(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	var request transaction.FilterTransactionsDTO
+	var request Filter
 	if err := json.Unmarshal(body, &request); err != nil {
 		logger.Errorf("error unmarshaling request: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error unmarshaling request: %s", err.Error()), http.StatusUnprocessableEntity)
 		return
 	}
 
-	transactions, err := h.transactionService.GetFiltered(r.Context(), &request, limit, offset)
+	filterRequest := request.toFilterRequest()
+	transactionDTOs, err := h.transactionService.GetFiltered(r.Context(), &filterRequest, limit, offset)
 	if err != nil {
 		logger.Errorf("error returned from service: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error returned from service: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
-	if len(transactions) == 0 {
+	if len(transactionDTOs) == 0 {
 		w.WriteHeader(http.StatusNotFound)
 		return
+	}
+	transactions := make([]Transaction, 0, len(transactionDTOs))
+	for _, dto := range transactionDTOs {
+		transactions = append(transactions, newTransaction(dto))
 	}
 	response, err := json.Marshal(transactions)
 	if err != nil {

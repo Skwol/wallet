@@ -11,12 +11,12 @@ const (
 )
 
 type Transaction struct {
-	ID         int64     `json:"id,omitempty"`
-	SenderID   int64     `json:"sender_id,omitempty"`
-	ReceiverID int64     `json:"receiver_id,omitempty"`
-	Amount     float64   `json:"amount,omitempty"`
-	Timestamp  time.Time `json:"timestamp,omitempty"`
-	Type       TranType  `json:"type,omitempty"`
+	ID         int64
+	SenderID   int64
+	ReceiverID int64
+	Amount     float64
+	Timestamp  time.Time
+	Type       TranType
 }
 
 func (t Transaction) ToDTO() *TransactionDTO {

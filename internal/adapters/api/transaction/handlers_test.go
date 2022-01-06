@@ -152,12 +152,12 @@ func TestGetTransaction(t *testing.T) {
 		t.Fatalf("error reading request: %s", err.Error())
 	}
 
-	var response domaintransaction.TransactionDTO
+	var response Transaction
 	if err := json.Unmarshal(result, &response); err != nil {
 		t.Fatalf("error unmarshaling response: %s", err.Error())
 	}
-	expectedResponse := domaintransaction.TransactionDTO{
-		ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranDate, Type: domaintransaction.TranTypeDeposit,
+	expectedResponse := Transaction{
+		ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranDate, Type: string(domaintransaction.TranTypeDeposit),
 	}
 	if !reflect.DeepEqual(expectedResponse, response) {
 		t.Fatalf("wrong transaction returned, expected: %+v, got: %+v", expectedResponse, response)
@@ -178,7 +178,7 @@ func TestGetTransactions(t *testing.T) {
 	tests := []struct {
 		name           string
 		args           args
-		want           []domaintransaction.TransactionDTO
+		want           []Transaction
 		wantStatusCode int
 	}{
 		{
@@ -189,20 +189,20 @@ func TestGetTransactions(t *testing.T) {
 		{
 			name: "all transactions",
 			args: args{limit: 10, offset: 0},
-			want: []domaintransaction.TransactionDTO{
-				{ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranDates[0], Type: domaintransaction.TranTypeDeposit},
-				{ID: 2, SenderID: 2, ReceiverID: 2, Amount: 200, Timestamp: tranDates[1], Type: domaintransaction.TranTypeDeposit},
-				{ID: 3, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranDates[2], Type: domaintransaction.TranTypeTransfer},
-				{ID: 4, SenderID: 2, ReceiverID: 2, Amount: 100, Timestamp: tranDates[3], Type: domaintransaction.TranTypeWithdraw},
+			want: []Transaction{
+				{ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranDates[0], Type: string(domaintransaction.TranTypeDeposit)},
+				{ID: 2, SenderID: 2, ReceiverID: 2, Amount: 200, Timestamp: tranDates[1], Type: string(domaintransaction.TranTypeDeposit)},
+				{ID: 3, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranDates[2], Type: string(domaintransaction.TranTypeTransfer)},
+				{ID: 4, SenderID: 2, ReceiverID: 2, Amount: 100, Timestamp: tranDates[3], Type: string(domaintransaction.TranTypeWithdraw)},
 			},
 			wantStatusCode: http.StatusOK,
 		},
 		{
 			name: "all transactions with offset and limit",
 			args: args{limit: 2, offset: 1},
-			want: []domaintransaction.TransactionDTO{
-				{ID: 2, SenderID: 2, ReceiverID: 2, Amount: 200, Timestamp: tranDates[1], Type: domaintransaction.TranTypeDeposit},
-				{ID: 3, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranDates[2], Type: domaintransaction.TranTypeTransfer},
+			want: []Transaction{
+				{ID: 2, SenderID: 2, ReceiverID: 2, Amount: 200, Timestamp: tranDates[1], Type: string(domaintransaction.TranTypeDeposit)},
+				{ID: 3, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranDates[2], Type: string(domaintransaction.TranTypeTransfer)},
 			},
 			wantStatusCode: http.StatusOK,
 		},
@@ -230,7 +230,7 @@ func TestGetTransactions(t *testing.T) {
 				}
 				return
 			}
-			var response []domaintransaction.TransactionDTO
+			var response []Transaction
 			if err := json.Unmarshal(result, &response); err != nil {
 				t.Fatalf("test %s: error unmarshaling response: %s", tt.name, err.Error())
 			}
@@ -246,8 +246,8 @@ func TestGetTransactions(t *testing.T) {
 	testsFilters := []struct {
 		name           string
 		args           argsFilters
-		request        domaintransaction.FilterTransactionsDTO
-		want           []domaintransaction.TransactionDTO
+		request        Filter
+		want           []Transaction
 		wantStatusCode int
 	}{
 		{
@@ -258,157 +258,157 @@ func TestGetTransactions(t *testing.T) {
 		{
 			name:    "filtered all transactions",
 			args:    argsFilters{limit: 10, offset: 0},
-			request: domaintransaction.FilterTransactionsDTO{},
-			want: []domaintransaction.TransactionDTO{
-				{ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranDates[0], Type: domaintransaction.TranTypeDeposit},
-				{ID: 2, SenderID: 2, ReceiverID: 2, Amount: 200, Timestamp: tranDates[1], Type: domaintransaction.TranTypeDeposit},
-				{ID: 3, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranDates[2], Type: domaintransaction.TranTypeTransfer},
-				{ID: 4, SenderID: 2, ReceiverID: 2, Amount: 100, Timestamp: tranDates[3], Type: domaintransaction.TranTypeWithdraw},
+			request: Filter{},
+			want: []Transaction{
+				{ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranDates[0], Type: string(domaintransaction.TranTypeDeposit)},
+				{ID: 2, SenderID: 2, ReceiverID: 2, Amount: 200, Timestamp: tranDates[1], Type: string(domaintransaction.TranTypeDeposit)},
+				{ID: 3, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranDates[2], Type: string(domaintransaction.TranTypeTransfer)},
+				{ID: 4, SenderID: 2, ReceiverID: 2, Amount: 100, Timestamp: tranDates[3], Type: string(domaintransaction.TranTypeWithdraw)},
 			},
 			wantStatusCode: http.StatusOK,
 		},
 		{
 			name:    "filtered all transactions with offset and limit",
 			args:    argsFilters{limit: 2, offset: 1},
-			request: domaintransaction.FilterTransactionsDTO{},
-			want: []domaintransaction.TransactionDTO{
-				{ID: 2, SenderID: 2, ReceiverID: 2, Amount: 200, Timestamp: tranDates[1], Type: domaintransaction.TranTypeDeposit},
-				{ID: 3, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranDates[2], Type: domaintransaction.TranTypeTransfer},
+			request: Filter{},
+			want: []Transaction{
+				{ID: 2, SenderID: 2, ReceiverID: 2, Amount: 200, Timestamp: tranDates[1], Type: string(domaintransaction.TranTypeDeposit)},
+				{ID: 3, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranDates[2], Type: string(domaintransaction.TranTypeTransfer)},
 			},
 			wantStatusCode: http.StatusOK,
 		},
 		{
 			name:    "filtered transactions by single sender id",
 			args:    argsFilters{limit: 10, offset: 0},
-			request: domaintransaction.FilterTransactionsDTO{SenderIDs: []int64{1}},
-			want: []domaintransaction.TransactionDTO{
-				{ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranDates[0], Type: domaintransaction.TranTypeDeposit},
+			request: Filter{SenderIDs: []int64{1}},
+			want: []Transaction{
+				{ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranDates[0], Type: string(domaintransaction.TranTypeDeposit)},
 			},
 			wantStatusCode: http.StatusOK,
 		},
 		{
 			name:    "filtered transactions by several sender id",
 			args:    argsFilters{limit: 10, offset: 0},
-			request: domaintransaction.FilterTransactionsDTO{SenderIDs: []int64{1, 2, 3}},
-			want: []domaintransaction.TransactionDTO{
-				{ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranDates[0], Type: domaintransaction.TranTypeDeposit},
-				{ID: 2, SenderID: 2, ReceiverID: 2, Amount: 200, Timestamp: tranDates[1], Type: domaintransaction.TranTypeDeposit},
-				{ID: 3, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranDates[2], Type: domaintransaction.TranTypeTransfer},
-				{ID: 4, SenderID: 2, ReceiverID: 2, Amount: 100, Timestamp: tranDates[3], Type: domaintransaction.TranTypeWithdraw},
+			request: Filter{SenderIDs: []int64{1, 2, 3}},
+			want: []Transaction{
+				{ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranDates[0], Type: string(domaintransaction.TranTypeDeposit)},
+				{ID: 2, SenderID: 2, ReceiverID: 2, Amount: 200, Timestamp: tranDates[1], Type: string(domaintransaction.TranTypeDeposit)},
+				{ID: 3, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranDates[2], Type: string(domaintransaction.TranTypeTransfer)},
+				{ID: 4, SenderID: 2, ReceiverID: 2, Amount: 100, Timestamp: tranDates[3], Type: string(domaintransaction.TranTypeWithdraw)},
 			},
 			wantStatusCode: http.StatusOK,
 		},
 		{
 			name:    "filtered transactions by amount more then 100",
 			args:    argsFilters{limit: 10, offset: 0},
-			request: domaintransaction.FilterTransactionsDTO{Amount: &domaintransaction.FloatRangeFilter{From: 100}},
-			want: []domaintransaction.TransactionDTO{
-				{ID: 2, SenderID: 2, ReceiverID: 2, Amount: 200, Timestamp: tranDates[1], Type: domaintransaction.TranTypeDeposit},
+			request: Filter{Amount: FloatRangeFilter{From: 100}},
+			want: []Transaction{
+				{ID: 2, SenderID: 2, ReceiverID: 2, Amount: 200, Timestamp: tranDates[1], Type: string(domaintransaction.TranTypeDeposit)},
 			},
 			wantStatusCode: http.StatusOK,
 		},
 		{
 			name:    "filtered transactions by amount less then 200",
 			args:    argsFilters{limit: 10, offset: 0},
-			request: domaintransaction.FilterTransactionsDTO{Amount: &domaintransaction.FloatRangeFilter{To: 200}},
-			want: []domaintransaction.TransactionDTO{
-				{ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranDates[0], Type: domaintransaction.TranTypeDeposit},
-				{ID: 3, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranDates[2], Type: domaintransaction.TranTypeTransfer},
-				{ID: 4, SenderID: 2, ReceiverID: 2, Amount: 100, Timestamp: tranDates[3], Type: domaintransaction.TranTypeWithdraw},
+			request: Filter{Amount: FloatRangeFilter{To: 200}},
+			want: []Transaction{
+				{ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranDates[0], Type: string(domaintransaction.TranTypeDeposit)},
+				{ID: 3, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranDates[2], Type: string(domaintransaction.TranTypeTransfer)},
+				{ID: 4, SenderID: 2, ReceiverID: 2, Amount: 100, Timestamp: tranDates[3], Type: string(domaintransaction.TranTypeWithdraw)},
 			},
 			wantStatusCode: http.StatusOK,
 		},
 		{
 			name:    "filtered transactions by amount more less then or equal to 200 and more then or equal to 100",
 			args:    argsFilters{limit: 10, offset: 0},
-			request: domaintransaction.FilterTransactionsDTO{Amount: &domaintransaction.FloatRangeFilter{From: 100, To: 200}},
-			want: []domaintransaction.TransactionDTO{
-				{ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranDates[0], Type: domaintransaction.TranTypeDeposit},
-				{ID: 2, SenderID: 2, ReceiverID: 2, Amount: 200, Timestamp: tranDates[1], Type: domaintransaction.TranTypeDeposit},
-				{ID: 3, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranDates[2], Type: domaintransaction.TranTypeTransfer},
-				{ID: 4, SenderID: 2, ReceiverID: 2, Amount: 100, Timestamp: tranDates[3], Type: domaintransaction.TranTypeWithdraw},
+			request: Filter{Amount: FloatRangeFilter{From: 100, To: 200}},
+			want: []Transaction{
+				{ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranDates[0], Type: string(domaintransaction.TranTypeDeposit)},
+				{ID: 2, SenderID: 2, ReceiverID: 2, Amount: 200, Timestamp: tranDates[1], Type: string(domaintransaction.TranTypeDeposit)},
+				{ID: 3, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranDates[2], Type: string(domaintransaction.TranTypeTransfer)},
+				{ID: 4, SenderID: 2, ReceiverID: 2, Amount: 100, Timestamp: tranDates[3], Type: string(domaintransaction.TranTypeWithdraw)},
 			},
 			wantStatusCode: http.StatusOK,
 		},
 		{
 			name:           "filtered transactions by amount more less then 200 more then 100",
 			args:           argsFilters{limit: 10, offset: 0},
-			request:        domaintransaction.FilterTransactionsDTO{Amount: &domaintransaction.FloatRangeFilter{From: 101, To: 199}},
+			request:        Filter{Amount: FloatRangeFilter{From: 101, To: 199}},
 			wantStatusCode: http.StatusNotFound,
 		},
 		{
 			name:           "filtered transactions by amount more less then 100",
 			args:           argsFilters{limit: 10, offset: 0},
-			request:        domaintransaction.FilterTransactionsDTO{Amount: &domaintransaction.FloatRangeFilter{To: 100}},
+			request:        Filter{Amount: FloatRangeFilter{To: 100}},
 			wantStatusCode: http.StatusNotFound,
 		},
 		{
 			name:    "filtered transactions by timestamp after first",
 			args:    argsFilters{limit: 10, offset: 0},
-			request: domaintransaction.FilterTransactionsDTO{Timestamp: &domaintransaction.DateRangeFilter{From: tranDates[0]}},
-			want: []domaintransaction.TransactionDTO{
-				{ID: 2, SenderID: 2, ReceiverID: 2, Amount: 200, Timestamp: tranDates[1], Type: domaintransaction.TranTypeDeposit},
-				{ID: 3, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranDates[2], Type: domaintransaction.TranTypeTransfer},
-				{ID: 4, SenderID: 2, ReceiverID: 2, Amount: 100, Timestamp: tranDates[3], Type: domaintransaction.TranTypeWithdraw},
+			request: Filter{Timestamp: DateRangeFilter{From: tranDates[0]}},
+			want: []Transaction{
+				{ID: 2, SenderID: 2, ReceiverID: 2, Amount: 200, Timestamp: tranDates[1], Type: string(domaintransaction.TranTypeDeposit)},
+				{ID: 3, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranDates[2], Type: string(domaintransaction.TranTypeTransfer)},
+				{ID: 4, SenderID: 2, ReceiverID: 2, Amount: 100, Timestamp: tranDates[3], Type: string(domaintransaction.TranTypeWithdraw)},
 			},
 			wantStatusCode: http.StatusOK,
 		},
 		{
 			name:    "filtered transactions by timestamp before last",
 			args:    argsFilters{limit: 10, offset: 0},
-			request: domaintransaction.FilterTransactionsDTO{Timestamp: &domaintransaction.DateRangeFilter{To: tranDates[3]}},
-			want: []domaintransaction.TransactionDTO{
-				{ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranDates[0], Type: domaintransaction.TranTypeDeposit},
-				{ID: 2, SenderID: 2, ReceiverID: 2, Amount: 200, Timestamp: tranDates[1], Type: domaintransaction.TranTypeDeposit},
-				{ID: 3, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranDates[2], Type: domaintransaction.TranTypeTransfer},
+			request: Filter{Timestamp: DateRangeFilter{To: tranDates[3]}},
+			want: []Transaction{
+				{ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranDates[0], Type: string(domaintransaction.TranTypeDeposit)},
+				{ID: 2, SenderID: 2, ReceiverID: 2, Amount: 200, Timestamp: tranDates[1], Type: string(domaintransaction.TranTypeDeposit)},
+				{ID: 3, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranDates[2], Type: string(domaintransaction.TranTypeTransfer)},
 			},
 			wantStatusCode: http.StatusOK,
 		},
 		{
 			name:    "filtered transactions by timestamp before last after first (inclusive)",
 			args:    argsFilters{limit: 10, offset: 0},
-			request: domaintransaction.FilterTransactionsDTO{Timestamp: &domaintransaction.DateRangeFilter{From: tranDates[0], To: tranDates[3]}},
-			want: []domaintransaction.TransactionDTO{
-				{ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranDates[0], Type: domaintransaction.TranTypeDeposit},
-				{ID: 2, SenderID: 2, ReceiverID: 2, Amount: 200, Timestamp: tranDates[1], Type: domaintransaction.TranTypeDeposit},
-				{ID: 3, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranDates[2], Type: domaintransaction.TranTypeTransfer},
-				{ID: 4, SenderID: 2, ReceiverID: 2, Amount: 100, Timestamp: tranDates[3], Type: domaintransaction.TranTypeWithdraw},
+			request: Filter{Timestamp: DateRangeFilter{From: tranDates[0], To: tranDates[3]}},
+			want: []Transaction{
+				{ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranDates[0], Type: string(domaintransaction.TranTypeDeposit)},
+				{ID: 2, SenderID: 2, ReceiverID: 2, Amount: 200, Timestamp: tranDates[1], Type: string(domaintransaction.TranTypeDeposit)},
+				{ID: 3, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranDates[2], Type: string(domaintransaction.TranTypeTransfer)},
+				{ID: 4, SenderID: 2, ReceiverID: 2, Amount: 100, Timestamp: tranDates[3], Type: string(domaintransaction.TranTypeWithdraw)},
 			},
 			wantStatusCode: http.StatusOK,
 		},
 		{
 			name:    "filtered transactions by timestamp before last after first (inclusive)",
 			args:    argsFilters{limit: 10, offset: 0},
-			request: domaintransaction.FilterTransactionsDTO{Timestamp: &domaintransaction.DateRangeFilter{From: tranDates[0].Add(time.Minute), To: tranDates[3].Add(-time.Minute)}},
-			want: []domaintransaction.TransactionDTO{
-				{ID: 2, SenderID: 2, ReceiverID: 2, Amount: 200, Timestamp: tranDates[1], Type: domaintransaction.TranTypeDeposit},
-				{ID: 3, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranDates[2], Type: domaintransaction.TranTypeTransfer},
+			request: Filter{Timestamp: DateRangeFilter{From: tranDates[0].Add(time.Minute), To: tranDates[3].Add(-time.Minute)}},
+			want: []Transaction{
+				{ID: 2, SenderID: 2, ReceiverID: 2, Amount: 200, Timestamp: tranDates[1], Type: string(domaintransaction.TranTypeDeposit)},
+				{ID: 3, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranDates[2], Type: string(domaintransaction.TranTypeTransfer)},
 			},
 			wantStatusCode: http.StatusOK,
 		},
 		{
 			name:           "filtered transactions by timestamp before first",
 			args:           argsFilters{limit: 10, offset: 0},
-			request:        domaintransaction.FilterTransactionsDTO{Timestamp: &domaintransaction.DateRangeFilter{To: tranDates[0]}},
+			request:        Filter{Timestamp: DateRangeFilter{To: tranDates[0]}},
 			wantStatusCode: http.StatusNotFound,
 		},
 		{
 			name:    "filtered transactions by types deposit and transfer",
 			args:    argsFilters{limit: 10, offset: 0},
-			request: domaintransaction.FilterTransactionsDTO{Types: []string{string(domaintransaction.TranTypeDeposit), string(domaintransaction.TranTypeTransfer)}},
-			want: []domaintransaction.TransactionDTO{
-				{ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranDates[0], Type: domaintransaction.TranTypeDeposit},
-				{ID: 2, SenderID: 2, ReceiverID: 2, Amount: 200, Timestamp: tranDates[1], Type: domaintransaction.TranTypeDeposit},
-				{ID: 3, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranDates[2], Type: domaintransaction.TranTypeTransfer},
+			request: Filter{Types: []string{string(domaintransaction.TranTypeDeposit), string(domaintransaction.TranTypeTransfer)}},
+			want: []Transaction{
+				{ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranDates[0], Type: string(domaintransaction.TranTypeDeposit)},
+				{ID: 2, SenderID: 2, ReceiverID: 2, Amount: 200, Timestamp: tranDates[1], Type: string(domaintransaction.TranTypeDeposit)},
+				{ID: 3, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranDates[2], Type: string(domaintransaction.TranTypeTransfer)},
 			},
 			wantStatusCode: http.StatusOK,
 		},
 		{
 			name:    "filtered transactions by types withdraw",
 			args:    argsFilters{limit: 10, offset: 0},
-			request: domaintransaction.FilterTransactionsDTO{Types: []string{string(domaintransaction.TranTypeWithdraw)}},
-			want: []domaintransaction.TransactionDTO{
-				{ID: 4, SenderID: 2, ReceiverID: 2, Amount: 100, Timestamp: tranDates[3], Type: domaintransaction.TranTypeWithdraw},
+			request: Filter{Types: []string{string(domaintransaction.TranTypeWithdraw)}},
+			want: []Transaction{
+				{ID: 4, SenderID: 2, ReceiverID: 2, Amount: 100, Timestamp: tranDates[3], Type: string(domaintransaction.TranTypeWithdraw)},
 			},
 			wantStatusCode: http.StatusOK,
 		},
@@ -436,7 +436,7 @@ func TestGetTransactions(t *testing.T) {
 				}
 				return
 			}
-			var response []domaintransaction.TransactionDTO
+			var response []Transaction
 			if err := json.Unmarshal(result, &response); err != nil {
 				t.Fatalf("test %s: error unmarshaling response: %s", tt.name, err.Error())
 			}

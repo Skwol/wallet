@@ -21,24 +21,13 @@ func newTransactionFilter(dto *transaction.FilterTransactionsDTO) transactionFil
 	if dto == nil {
 		return filter
 	}
-	if len(dto.SenderIDs) > 0 {
-		filter.senderID = newInt64Filter(dto.SenderIDs...)
-	}
-	if len(dto.ReceiverIDs) > 0 {
-		filter.receiverID = newInt64Filter(dto.ReceiverIDs...)
-	}
 
-	if dto.Amount != nil {
-		filter.amount = newFloatRangeFilter(dto.Amount.From, dto.Amount.To)
-	}
+	filter.senderID = newInt64Filter(dto.SenderIDs...)
+	filter.receiverID = newInt64Filter(dto.ReceiverIDs...)
+	filter.amount = newFloatRangeFilter(dto.Amount.From, dto.Amount.To)
+	filter.timestamp = newDateRangeFilter(dto.Timestamp.From, dto.Timestamp.To)
+	filter.transactionType = newStringFilter(dto.Types...)
 
-	if dto.Timestamp != nil {
-		filter.timestamp = newDateRangeFilter(dto.Timestamp.From, dto.Timestamp.To)
-	}
-
-	if len(dto.Types) > 0 {
-		filter.transactionType = newStringFilter(dto.Types...)
-	}
 	return filter
 }
 
@@ -73,6 +62,9 @@ func (s transactionFilter) BuildQuery(limit, offset int) string {
 type stringFilter []string
 
 func newStringFilter(values ...string) stringFilter {
+	if len(values) == 0 {
+		return nil
+	}
 	return values
 }
 
@@ -91,6 +83,9 @@ func (f stringFilter) Build(fieldName string) string {
 type int64Filter []int64
 
 func newInt64Filter(values ...int64) int64Filter {
+	if len(values) == 0 {
+		return nil
+	}
 	return values
 }
 
@@ -112,6 +107,9 @@ type floatRangeFilter struct {
 }
 
 func newFloatRangeFilter(from, to float64) *floatRangeFilter {
+	if from == 0 && to == 0 {
+		return nil
+	}
 	return &floatRangeFilter{
 		From: from,
 		To:   to,
@@ -137,6 +135,9 @@ type dateRangeFilter struct {
 }
 
 func newDateRangeFilter(from, to time.Time) *dateRangeFilter {
+	if from.IsZero() && to.IsZero() {
+		return nil
+	}
 	return &dateRangeFilter{
 		From: from,
 		To:   to,

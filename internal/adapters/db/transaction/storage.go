@@ -67,8 +67,7 @@ func (as *transactionStorage) GetAll(ctx context.Context, limit int, offset int)
 
 func (as *transactionStorage) GetFiltered(ctx context.Context, filter *transaction.FilterTransactionsDTO, limit, offset int) ([]transaction.TransactionDTO, error) {
 	var list []transaction.TransactionDTO
-	dbFilter := newTransactionFilter(filter)
-	rows, err := as.db.Conn.QueryContext(ctx, dbFilter.BuildQuery(limit, offset))
+	rows, err := as.db.Conn.QueryContext(ctx, newTransactionFilter(filter).BuildQuery(limit, offset))
 	if err != nil {
 		return list, err
 	}
