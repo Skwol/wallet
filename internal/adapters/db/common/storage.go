@@ -31,14 +31,16 @@ func (cs *commonStorage) GenerateFakeData(ctx context.Context, numberOfRecordsTo
 			case <-ctx.Done():
 				return nil
 			default:
+				var walletID int
 				walletName := fmt.Sprintf("wallet_%d", i+1)
 				walletBalance := randFloat(1, 1200)
 
-				if _, err := cs.db.Conn.ExecContext(ctx, "INSERT INTO wallet (id, name, balance) VALUES ($1, $2, $3);", i, walletName, walletBalance); err != nil {
+				row := cs.db.Conn.QueryRow("INSERT INTO wallet (name, balance) VALUES ($1, $2) RETURNING id;", walletName, walletBalance)
+				if err := row.Scan(&walletID); err != nil {
 					return err
 				}
 
-				if _, err := cs.db.Conn.ExecContext(ctx, "INSERT INTO transaction (sender_id, receiver_id, amount, date, tran_type) VALUES ($1, $1, $2, current_timestamp, $3);", i, walletBalance, transaction.TranTypeDeposit); err != nil {
+				if _, err := cs.db.Conn.ExecContext(ctx, "INSERT INTO transaction (sender_id, receiver_id, amount, date, tran_type) VALUES ($1, $1, $2, current_timestamp, $3);", walletID, walletBalance, transaction.TranTypeDeposit); err != nil {
 					return err
 				}
 			}
