@@ -3,7 +3,6 @@ module github.com/skwol/wallet
 go 1.17
 
 require (
-	github.com/Pallinder/go-randomdata v1.2.0
 	github.com/gorilla/mux v1.8.0
 	github.com/sirupsen/logrus v1.8.1
 )

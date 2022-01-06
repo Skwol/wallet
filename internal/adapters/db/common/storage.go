@@ -3,8 +3,9 @@ package common
 import (
 	"context"
 	"fmt"
+	"math/rand"
+	"time"
 
-	"github.com/Pallinder/go-randomdata"
 	"github.com/skwol/wallet/internal/domain/common"
 	"github.com/skwol/wallet/internal/domain/transaction"
 	"github.com/skwol/wallet/pkg/client/pgdb"
@@ -24,18 +25,12 @@ func (cs *commonStorage) GenerateFakeData(ctx context.Context) error {
 		return fmt.Errorf("error beginning transaction")
 	}
 
-	numberOfWallets := 100
-	walletNames := make(map[string]bool, numberOfWallets)
+	rand.Seed(time.Now().UnixNano())
+	balances := randFloats(0, 1200, 100)
 
 	var walletID int64
-	for i := 0; i < numberOfWallets; i++ {
-		walletName := randomdata.SillyName()
-		if walletNames[walletName] {
-			i--
-			continue
-		}
-		walletNames[walletName] = true
-		walletBalance := randomdata.Decimal(1000)
+	for i, walletBalance := range balances {
+		walletName := fmt.Sprintf("wallet_%d", i+1)
 
 		row := tx.QueryRow("INSERT INTO wallet (name, balance) VALUES ($1, $2) RETURNING id;", walletName, walletBalance)
 		if err = row.Scan(&walletID); err != nil {
@@ -53,4 +48,12 @@ func (cs *commonStorage) GenerateFakeData(ctx context.Context) error {
 		return fmt.Errorf("error commiting transaction, rolled back")
 	}
 	return nil
+}
+
+func randFloats(min, max float64, n int) []float64 {
+	res := make([]float64, n)
+	for i := range res {
+		res[i] = min + rand.Float64()*(max-min)
+	}
+	return res
 }
