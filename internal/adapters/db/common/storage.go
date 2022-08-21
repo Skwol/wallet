@@ -2,34 +2,37 @@ package common
 
 import (
 	"context"
+	"crypto/rand"
 	"fmt"
-	"math/rand"
+	"math/big"
 	"sync"
 	"time"
 
+	"github.com/skwol/wallet/pkg/client/pgdb"
+	"github.com/skwol/wallet/pkg/logging"
+
 	"github.com/skwol/wallet/internal/domain/common"
 	"github.com/skwol/wallet/internal/domain/transaction"
-	"github.com/skwol/wallet/pkg/client/pgdb"
 )
 
 type commonStorage struct {
-	db *pgdb.PGDB
+	db     *pgdb.PGDB
+	logger logging.Logger
 }
 
-func NewStorage(db *pgdb.PGDB) (common.Storage, error) {
-	return &commonStorage{db: db}, nil
+func NewStorage(db *pgdb.PGDB, logger logging.Logger) (common.Storage, error) {
+	return &commonStorage{db: db, logger: logger}, nil
 }
 
 func (cs *commonStorage) GenerateFakeData(ctx context.Context, numberOfRecordsToCreate int) error {
-	rand.Seed(time.Now().UnixNano())
 	var wg sync.WaitGroup
 
-	generateData := func(ctx context.Context, start, end int) error {
+	generateData := func(ctx context.Context, start, end int) {
 		defer wg.Done()
 		for i := start; i <= end; i++ {
 			select {
 			case <-ctx.Done():
-				return nil
+				return
 			default:
 				var walletID int
 				walletName := fmt.Sprintf("wallet_%d", i+1)
@@ -37,15 +40,16 @@ func (cs *commonStorage) GenerateFakeData(ctx context.Context, numberOfRecordsTo
 
 				row := cs.db.Conn.QueryRow("INSERT INTO wallet (name, balance) VALUES ($1, $2) RETURNING id;", walletName, walletBalance)
 				if err := row.Scan(&walletID); err != nil {
-					return err
+					cs.logger.Warn("error receiving walletID %s", err.Error())
+					return
 				}
 
 				if _, err := cs.db.Conn.ExecContext(ctx, "INSERT INTO transaction (sender_id, receiver_id, amount, date, tran_type) VALUES ($1, $1, $2, current_timestamp, $3);", walletID, walletBalance, transaction.TranTypeDeposit); err != nil {
-					return err
+					cs.logger.Warn("error inserting transaction %s", err.Error())
+					return
 				}
 			}
 		}
-		return nil
 	}
 
 	ctxForData, cancel := context.WithTimeout(context.Background(), time.Minute*25)
@@ -62,6 +66,14 @@ func (cs *commonStorage) GenerateFakeData(ctx context.Context, numberOfRecordsTo
 	return nil
 }
 
+// Float64 is a shortcut for generating a random float between 0 and
+// 1 using crypto/rand.
 func randFloat(min, max float64) float64 {
-	return min + rand.Float64()*(max-min)
+	nBig, err := rand.Int(rand.Reader, big.NewInt(1<<53))
+	if err != nil {
+		return 0
+	}
+
+	randomFloat := float64(nBig.Int64()) / (1 << 53)
+	return min + randomFloat*(max-min)
 }

@@ -5,12 +5,12 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/skwol/wallet/pkg/clock"
 )
 
 func TestWallet_Update(t *testing.T) {
-	timeNow = func() time.Time {
-		return time.Date(2021, 10, 10, 10, 0, 0, 0, time.UTC)
-	}
+	clk := clock.NewFake(time.Date(2021, 10, 10, 10, 0, 0, 0, time.UTC))
 	type fields struct {
 		ID      int64
 		Name    string
@@ -45,7 +45,7 @@ func TestWallet_Update(t *testing.T) {
 			fields: fields{ID: 1, Balance: 1},
 			args:   args{wallet: &UpdateWalletDTO{CreateWalletDTO: CreateWalletDTO{Balance: 0}}},
 			want: &Wallet{ID: 1, Balance: 0, TransactionsToApply: []Transaction{{
-				SenderID: 1, ReceiverID: 1, Amount: 1, Timestamp: timeNow(), Type: TranTypeWithdraw,
+				SenderID: 1, ReceiverID: 1, Amount: 1, Timestamp: clk.Now(), Type: TranTypeWithdraw,
 			}}},
 			wantErr: nil,
 		},
@@ -54,7 +54,7 @@ func TestWallet_Update(t *testing.T) {
 			fields: fields{ID: 1, Balance: 1},
 			args:   args{wallet: &UpdateWalletDTO{CreateWalletDTO: CreateWalletDTO{Balance: 20}}},
 			want: &Wallet{ID: 1, Balance: 20, TransactionsToApply: []Transaction{{
-				SenderID: 1, ReceiverID: 1, Amount: 19, Timestamp: timeNow(), Type: TranTypeDeposit,
+				SenderID: 1, ReceiverID: 1, Amount: 19, Timestamp: clk.Now(), Type: TranTypeDeposit,
 			}}},
 			wantErr: nil,
 		},
@@ -66,7 +66,7 @@ func TestWallet_Update(t *testing.T) {
 				Name:    tt.fields.Name,
 				Balance: tt.fields.Balance,
 			}
-			got, err := w.Update(tt.args.wallet)
+			got, err := w.Update(tt.args.wallet, clk.Now())
 			if tt.wantErr != nil {
 				if err == nil || tt.wantErr.Error() != err.Error() {
 					t.Errorf("Wallet.Update() error = %v, wantErr %v", err, tt.wantErr)
@@ -80,9 +80,7 @@ func TestWallet_Update(t *testing.T) {
 }
 
 func Test_newWallet(t *testing.T) {
-	timeNow = func() time.Time {
-		return time.Date(2021, 10, 10, 10, 0, 0, 0, time.UTC)
-	}
+	clk := clock.NewFake(time.Date(2021, 10, 10, 10, 0, 0, 0, time.UTC))
 	type args struct {
 		dto *CreateWalletDTO
 	}
@@ -107,13 +105,13 @@ func Test_newWallet(t *testing.T) {
 		{
 			name:    "test ok with balance",
 			args:    args{&CreateWalletDTO{Balance: 1, Name: "test name"}},
-			want:    &Wallet{Name: "test name", Balance: 1, TransactionsToApply: []Transaction{{Amount: 1, Timestamp: timeNow(), Type: TranTypeDeposit}}},
+			want:    &Wallet{Name: "test name", Balance: 1, TransactionsToApply: []Transaction{{Amount: 1, Timestamp: clk.Now(), Type: TranTypeDeposit}}},
 			wantErr: nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := newWallet(tt.args.dto)
+			got, err := newWallet(tt.args.dto, clk.Now())
 
 			if tt.wantErr != nil {
 				if err == nil || tt.wantErr.Error() != err.Error() {

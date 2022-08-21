@@ -2,6 +2,8 @@ package common
 
 import (
 	"context"
+
+	"github.com/skwol/wallet/pkg/logging"
 )
 
 type Service interface {
@@ -10,10 +12,11 @@ type Service interface {
 
 type service struct {
 	storage Storage
+	logger  logging.Logger
 }
 
-func NewService(storage Storage) (Service, error) {
-	return &service{storage: storage}, nil
+func NewService(storage Storage, logger logging.Logger) (Service, error) {
+	return &service{storage: storage, logger: logger}, nil
 }
 
 func (s *service) GenerateFakeData(ctx context.Context, numberOfRecordsToCreate int) error {

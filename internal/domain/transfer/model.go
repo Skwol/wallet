@@ -5,10 +5,6 @@ import (
 	"time"
 )
 
-var timeNow = func() time.Time {
-	return time.Now()
-}
-
 type Transfer struct {
 	Amount    float64
 	Timestamp time.Time
@@ -16,8 +12,8 @@ type Transfer struct {
 	Receiver  Wallet
 }
 
-func (t *Transfer) toDTO() *TransferDTO {
-	return &TransferDTO{
+func (t *Transfer) toDTO() *DTO {
+	return &DTO{
 		CreateTransferDTO: CreateTransferDTO{
 			Amount:    t.Amount,
 			Timestamp: t.Timestamp,
@@ -39,7 +35,7 @@ func (w *Wallet) toDTO() WalletDTO {
 	}
 }
 
-func createTransfer(dto *CreateTransferDTO) (*Transfer, error) {
+func createTransfer(dto *CreateTransferDTO, timestamp time.Time) (*Transfer, error) {
 	if dto.Receiver.ID == 0 || dto.Sender.ID == 0 {
 		return nil, fmt.Errorf("missing sender or receiver")
 	}
@@ -55,6 +51,6 @@ func createTransfer(dto *CreateTransferDTO) (*Transfer, error) {
 
 	dto.Sender.Balance -= dto.Amount
 	dto.Receiver.Balance += dto.Amount
-	dto.Timestamp = timeNow()
+	dto.Timestamp = timestamp
 	return dto.toModel(), nil
 }

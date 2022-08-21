@@ -4,27 +4,30 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/skwol/wallet/pkg/clock"
 	"github.com/skwol/wallet/pkg/logging"
 )
 
 type Service interface {
-	Create(context.Context, *CreateWalletDTO) (WalletDTO, error)
-	GetByID(context.Context, int64) (WalletDTO, error)
-	GetByIDWithTransactions(context.Context, int64, int, int) (WalletDTO, error)
-	GetAll(ctx context.Context, limit int, offset int) ([]WalletDTO, error)
-	Update(context.Context, int64, *UpdateWalletDTO) (WalletDTO, error)
+	Create(context.Context, *CreateWalletDTO) (DTO, error)
+	GetByID(context.Context, int64) (DTO, error)
+	GetByIDWithTransactions(context.Context, int64, int, int) (DTO, error)
+	GetAll(ctx context.Context, limit int, offset int) ([]DTO, error)
+	Update(context.Context, int64, *UpdateWalletDTO) (DTO, error)
 }
 
 type service struct {
 	storage Storage
+	logger  logging.Logger
+	clk     clock.Clock
 }
 
-func NewService(storage Storage) (Service, error) {
-	return &service{storage: storage}, nil
+func NewService(storage Storage, logger logging.Logger, clk clock.Clock) (Service, error) {
+	return &service{storage: storage, logger: logger, clk: clk}, nil
 }
 
-func (s *service) Create(ctx context.Context, dto *CreateWalletDTO) (WalletDTO, error) {
-	var result WalletDTO
+func (s *service) Create(ctx context.Context, dto *CreateWalletDTO) (DTO, error) {
+	var result DTO
 	logger := logging.GetLogger()
 	dbWallet, err := s.storage.GetByName(ctx, dto.Name)
 	if err != nil {
@@ -35,7 +38,7 @@ func (s *service) Create(ctx context.Context, dto *CreateWalletDTO) (WalletDTO, 
 		logger.Errorf("wallet with name %s already exist", dto.Name)
 		return result, fmt.Errorf("wallet with name %s already exist", dto.Name)
 	}
-	walletModel, err := newWallet(dto)
+	walletModel, err := newWallet(dto, s.clk.Now())
 	if err != nil {
 		logger.Errorf("error creating wallet model: %s", err.Error())
 		return result, fmt.Errorf("error creating wallet model: %w", err)
@@ -56,20 +59,20 @@ func (s *service) Create(ctx context.Context, dto *CreateWalletDTO) (WalletDTO, 
 	return result, nil
 }
 
-func (s *service) GetByID(ctx context.Context, id int64) (WalletDTO, error) {
+func (s *service) GetByID(ctx context.Context, id int64) (DTO, error) {
 	return s.storage.GetByID(ctx, id)
 }
 
-func (s *service) GetByIDWithTransactions(ctx context.Context, id int64, limit, offset int) (WalletDTO, error) {
+func (s *service) GetByIDWithTransactions(ctx context.Context, id int64, limit, offset int) (DTO, error) {
 	return s.storage.GetByIDWithTransactions(ctx, id, limit, offset)
 }
 
-func (s *service) GetAll(ctx context.Context, limit int, offset int) ([]WalletDTO, error) {
+func (s *service) GetAll(ctx context.Context, limit int, offset int) ([]DTO, error) {
 	return s.storage.GetAll(ctx, limit, offset)
 }
 
-func (s *service) Update(ctx context.Context, id int64, walletDTO *UpdateWalletDTO) (WalletDTO, error) {
-	var result WalletDTO
+func (s *service) Update(ctx context.Context, id int64, walletDTO *UpdateWalletDTO) (DTO, error) {
+	var result DTO
 	logger := logging.GetLogger()
 
 	walletInDB, err := s.storage.GetByID(ctx, id)
@@ -82,7 +85,7 @@ func (s *service) Update(ctx context.Context, id int64, walletDTO *UpdateWalletD
 		return result, fmt.Errorf("missing wallet db")
 	}
 	walletModel := walletInDB.toModel()
-	wallet, err := walletModel.Update(walletDTO)
+	wallet, err := walletModel.Update(walletDTO, s.clk.Now())
 	if err != nil {
 		logger.Errorf("error updating wallet model: %s", err.Error())
 		return result, fmt.Errorf("error updating wallet model: %w", err)

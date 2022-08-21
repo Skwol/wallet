@@ -1,7 +1,10 @@
 package composites
 
 import (
-	"fmt"
+	"github.com/pkg/errors"
+
+	"github.com/skwol/wallet/pkg/clock"
+	"github.com/skwol/wallet/pkg/logging"
 
 	adapters "github.com/skwol/wallet/internal/adapters/api"
 	handlerwallet "github.com/skwol/wallet/internal/adapters/api/wallet"
@@ -15,21 +18,21 @@ type WalletComposite struct {
 	Handler adapters.Handler
 }
 
-func NewWalletComposite(db *PgDBComposite) (*WalletComposite, error) {
+func NewWalletComposite(db *PgDBComposite, logger logging.Logger) (*WalletComposite, error) {
 	if db == nil {
-		return nil, fmt.Errorf("missing db composite")
+		return nil, errors.New("missing db composite")
 	}
-	storage, err := dbwallet.NewStorage(db.client)
+	storage, err := dbwallet.NewStorage(db.client, logger)
 	if err != nil {
-		return nil, fmt.Errorf("error creating wallet storage %w", err)
+		return nil, errors.Wrap(err, "error creating wallet storage")
 	}
-	service, err := domainwallet.NewService(storage)
+	service, err := domainwallet.NewService(storage, logger, clock.Real{})
 	if err != nil {
-		return nil, fmt.Errorf("error creating wallet service %w", err)
+		return nil, errors.Wrap(err, "error creating wallet service")
 	}
-	handler, err := handlerwallet.NewHandler(service)
+	handler, err := handlerwallet.NewHandler(service, logger)
 	if err != nil {
-		return nil, fmt.Errorf("error creating wallet handler %w", err)
+		return nil, errors.Wrap(err, "error creating wallet handler")
 	}
 	return &WalletComposite{
 		Storage: storage,

@@ -17,12 +17,14 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/gorilla/mux"
-	dbwallet "github.com/skwol/wallet/internal/adapters/db/wallet"
-	"github.com/skwol/wallet/internal/domain/wallet"
-	domainwallet "github.com/skwol/wallet/internal/domain/wallet"
+
 	"github.com/skwol/wallet/pkg/client/pgdb"
+	"github.com/skwol/wallet/pkg/clock"
 	"github.com/skwol/wallet/pkg/logging"
 	"github.com/skwol/wallet/pkg/testdb"
+
+	dbwallet "github.com/skwol/wallet/internal/adapters/db/wallet"
+	"github.com/skwol/wallet/internal/domain/wallet"
 )
 
 var (
@@ -38,7 +40,7 @@ func setup(t *testing.T) {
 		router = mux.NewRouter()
 
 		var err error
-		dbClient, err = testdb.DBClient()
+		dbClient, err = testdb.DBClient(logging.GetLogger())
 		if err != nil {
 			t.Fatalf("error creating db client: %s", err.Error())
 		}
@@ -46,19 +48,23 @@ func setup(t *testing.T) {
 			t.Fatal("missing db client")
 		}
 
-		storage, err := dbwallet.NewStorage(dbClient)
+		storage, err := dbwallet.NewStorage(dbClient, logging.GetLogger())
 		if err != nil {
 			t.Fatalf("error creating wallet storage %s", err.Error())
 		}
-		service, err := domainwallet.NewService(storage)
+		clk := clock.NewFake(time.Date(2020, 10, 10, 0, 0, 0, 0, time.UTC))
+		service, err := wallet.NewService(storage, logging.GetLogger(), clk)
 		if err != nil {
 			t.Fatalf("error creating wallet service %s", err.Error())
 		}
-		handlerInterface, err := NewHandler(service)
+		handlerInterface, err := NewHandler(service, logging.GetLogger())
 		if err != nil {
 			t.Fatalf("error creating wallet handler %s", err.Error())
 		}
-		walletHandler := handlerInterface.(*handler)
+		walletHandler, ok := handlerInterface.(*handler)
+		if !ok {
+			t.Fatal("wrong interface")
+		}
 
 		walletHandler.Register(router)
 	})
@@ -122,8 +128,7 @@ func TestGetWallets(t *testing.T) {
 	defer ts.Close()
 
 	type args struct {
-		limit, offset int
-		endpoint      string
+		endpoint string
 	}
 	tests := []struct {
 		name           string
@@ -176,9 +181,9 @@ func TestGetWallets(t *testing.T) {
 			args: args{endpoint: fmt.Sprintf("%s/api/v1/wallets-with-transactions/1?limit=10&offset=0&test=1", ts.URL)},
 			want: []Wallet{
 				{ID: 1, Name: "test_wallet_one", Balance: 100, Transactions: []Transaction{
-					{ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranOneDate, Type: string(domainwallet.TranTypeDeposit)},
-					{ID: 2, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranTwoDate, Type: string(domainwallet.TranTypeTransfer)},
-					{ID: 3, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranThreeDate, Type: string(domainwallet.TranTypeWithdraw)},
+					{ID: 1, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranOneDate, Type: string(wallet.TranTypeDeposit)},
+					{ID: 2, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranTwoDate, Type: string(wallet.TranTypeTransfer)},
+					{ID: 3, SenderID: 1, ReceiverID: 1, Amount: 100, Timestamp: tranThreeDate, Type: string(wallet.TranTypeWithdraw)},
 				}},
 			},
 			wantStatusCode: http.StatusOK,
@@ -189,7 +194,7 @@ func TestGetWallets(t *testing.T) {
 			args: args{endpoint: fmt.Sprintf("%s/api/v1/wallets-with-transactions/1?limit=1&offset=1&test=1", ts.URL)},
 			want: []Wallet{
 				{ID: 1, Name: "test_wallet_one", Balance: 100, Transactions: []Transaction{
-					{ID: 2, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranTwoDate, Type: string(domainwallet.TranTypeTransfer)},
+					{ID: 2, SenderID: 2, ReceiverID: 1, Amount: 100, Timestamp: tranTwoDate, Type: string(wallet.TranTypeTransfer)},
 				}},
 			},
 			wantStatusCode: http.StatusOK,
@@ -214,6 +219,11 @@ func TestGetWallets(t *testing.T) {
 			if resp == nil {
 				t.Fatalf("test %s: missing response", tt.name)
 			}
+			defer func() {
+				if err := resp.Body.Close(); err != nil {
+					t.Fatalf("error closing body")
+				}
+			}()
 			if resp.StatusCode != tt.wantStatusCode {
 				t.Fatalf("test %s: expected status %d, got %d", tt.name, tt.wantStatusCode, resp.StatusCode)
 			}
@@ -297,7 +307,7 @@ func TestUpdateWallet(t *testing.T) {
 			name:             "update wallet deposit 100 to become 300",
 			args:             args{request: Wallet{Name: "wallet_two", Balance: 300}, enpoint: "/api/v1/wallets/2?test=1"},
 			want:             Wallet{ID: 2, Name: "wallet_two", Balance: 300},
-			wantTransactions: []Transaction{{SenderID: 2, ReceiverID: 2, Amount: 100, Type: string(domainwallet.TranTypeDeposit)}},
+			wantTransactions: []Transaction{{SenderID: 2, ReceiverID: 2, Amount: 100, Type: string(wallet.TranTypeDeposit)}},
 			wantStatusCode:   http.StatusOK,
 		},
 		{
@@ -315,6 +325,11 @@ func TestUpdateWallet(t *testing.T) {
 			if resp == nil {
 				t.Fatalf("test %s: missing response", tt.name)
 			}
+			defer func() {
+				if err := resp.Body.Close(); err != nil {
+					t.Fatalf("error closing body")
+				}
+			}()
 			if resp.StatusCode != tt.wantStatusCode {
 				t.Fatalf("test %s: expected status %d, got %d", tt.name, tt.wantStatusCode, resp.StatusCode)
 			}
@@ -411,7 +426,7 @@ func TestCreateWallet(t *testing.T) {
 			name:             "create wallet with 100 balance",
 			args:             args{Wallet{Name: "wallet_two", Balance: 100}},
 			want:             Wallet{Name: "wallet_two", Balance: 100},
-			wantTransactions: []Transaction{{Amount: 100, Type: string(domainwallet.TranTypeDeposit)}},
+			wantTransactions: []Transaction{{Amount: 100, Type: string(wallet.TranTypeDeposit)}},
 			wantStatusCode:   http.StatusCreated,
 		},
 		{
@@ -429,6 +444,11 @@ func TestCreateWallet(t *testing.T) {
 			if resp == nil {
 				t.Fatalf("test %s: missing response", tt.name)
 			}
+			defer func() {
+				if err := resp.Body.Close(); err != nil {
+					t.Fatalf("error closing body")
+				}
+			}()
 			if resp.StatusCode != tt.wantStatusCode {
 				t.Fatalf("test %s: expected status %d, got %d", tt.name, tt.wantStatusCode, resp.StatusCode)
 			}

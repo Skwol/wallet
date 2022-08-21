@@ -2,7 +2,7 @@ package transfer
 
 import "time"
 
-type TransferDTO struct {
+type DTO struct {
 	ID int64
 	CreateTransferDTO
 }
@@ -29,8 +29,5 @@ type WalletDTO struct {
 }
 
 func (d WalletDTO) toModel() Wallet {
-	return Wallet{
-		ID:      d.ID,
-		Balance: d.Balance,
-	}
+	return Wallet(d)
 }

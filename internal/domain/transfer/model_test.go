@@ -5,12 +5,12 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/skwol/wallet/pkg/clock"
 )
 
 func Test_createTransfer(t *testing.T) {
-	timeNow = func() time.Time {
-		return time.Date(2021, 10, 10, 10, 0, 0, 0, time.UTC)
-	}
+	clk := clock.NewFake(time.Date(2021, 10, 10, 10, 0, 0, 0, time.UTC))
 	type args struct {
 		dto *CreateTransferDTO
 	}
@@ -59,13 +59,13 @@ func Test_createTransfer(t *testing.T) {
 		{
 			name:    "test ok",
 			args:    args{dto: &CreateTransferDTO{Amount: 100, Sender: WalletDTO{ID: 1, Balance: 150}, Receiver: WalletDTO{ID: 2, Balance: 50}}},
-			want:    &Transfer{Amount: 100, Timestamp: timeNow(), Sender: Wallet{ID: 1, Balance: 50}, Receiver: Wallet{ID: 2, Balance: 150}},
+			want:    &Transfer{Amount: 100, Timestamp: clk.Now(), Sender: Wallet{ID: 1, Balance: 50}, Receiver: Wallet{ID: 2, Balance: 150}},
 			wantErr: nil,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := createTransfer(tt.args.dto)
+			got, err := createTransfer(tt.args.dto, clk.Now())
 			if tt.wantErr != nil {
 				if err == nil || tt.wantErr.Error() != err.Error() {
 					t.Errorf("createTransfer() error = %v, wantErr %v", err, tt.wantErr)

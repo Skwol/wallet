@@ -11,9 +11,11 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+
+	"github.com/skwol/wallet/pkg/logging"
+
 	adapters "github.com/skwol/wallet/internal/adapters/api"
 	"github.com/skwol/wallet/internal/domain/transaction"
-	"github.com/skwol/wallet/pkg/logging"
 )
 
 const (
@@ -64,7 +66,11 @@ func (h *handler) getTransaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write(response)
+	if _, err := w.Write(response); err != nil {
+		logger.Errorf("error writing response: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error writing response: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *handler) getAllTransactions(w http.ResponseWriter, r *http.Request) {
@@ -103,7 +109,12 @@ func (h *handler) getAllTransactions(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("error marshaling transactions: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
-	w.Write(response)
+
+	if _, err := w.Write(response); err != nil {
+		logger.Errorf("error writing response: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error writing response: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *handler) getFilteredTransactions(w http.ResponseWriter, r *http.Request) {
@@ -118,7 +129,12 @@ func (h *handler) getFilteredTransactions(w http.ResponseWriter, r *http.Request
 		http.Error(w, fmt.Sprintf("error marshaling transactions: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
-	w.Write(response)
+
+	if _, err := w.Write(response); err != nil {
+		logger.Errorf("error writing response: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error writing response: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *handler) getFilteredTransactionsReport(w http.ResponseWriter, r *http.Request) {
@@ -146,7 +162,12 @@ func (h *handler) getFilteredTransactionsReport(w http.ResponseWriter, r *http.R
 
 	w.Header().Set("Content-Disposition", "attachment; filename=report.csv")
 	w.Header().Set("Content-Type", r.Header.Get("Content-Type"))
-	io.Copy(w, &buf)
+
+	if _, err := io.Copy(w, &buf); err != nil {
+		logger.Errorf("error writing response: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error writing response: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
 }
 
 func getFiltered(logger logging.Logger, service transaction.Service, w http.ResponseWriter, r *http.Request) []Transaction {

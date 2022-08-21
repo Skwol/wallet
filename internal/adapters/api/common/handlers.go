@@ -6,10 +6,12 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"golang.org/x/time/rate"
+
+	"github.com/skwol/wallet/pkg/logging"
+
 	adapters "github.com/skwol/wallet/internal/adapters/api"
 	"github.com/skwol/wallet/internal/domain/common"
-	"github.com/skwol/wallet/pkg/logging"
-	"golang.org/x/time/rate"
 )
 
 const (
@@ -21,10 +23,11 @@ var limiter = rate.NewLimiter(0.0007, 1)
 
 type handler struct {
 	service common.Service
+	logger  logging.Logger
 }
 
-func NewHandler(service common.Service) (adapters.Handler, error) {
-	return &handler{service: service}, nil
+func NewHandler(service common.Service, logger logging.Logger) (adapters.Handler, error) {
+	return &handler{service: service, logger: logger}, nil
 }
 
 func (h *handler) Register(router *mux.Router) {

@@ -1,0 +1,46 @@
+linters-settings:
+  govet:
+    check-shadowing: false # disabled due to having much false positives
+  golint:
+    min-confidence: 0
+  gocyclo:
+    min-complexity: 25
+  goconst:
+    min-len: 2
+    min-occurrences: 2
+  errcheck:
+    check-type-assertions: true
+  gocritic:
+    disabled-checks:
+      - ifElseChain
+  nakedret:
+    max-func-lines: 15
+  goimports:
+    local-prefixes: github.com/skwol/wallet
+
+run:
+  skip-dirs:
+    - mock
+
+linters:
+  enable:
+    - revive
+    - gocritic
+    - stylecheck
+    - goimports
+    - gosec
+    - unconvert
+    - unparam
+    - gochecknoinits
+    - gosec
+    - nakedret
+    - whitespace
+    - gosimple
+    - bodyclose
+    - dogsled
+    - rowserrcheck
+  disable:
+    - maligned
+    - lll
+    - dupl
+    - gochecknoglobals

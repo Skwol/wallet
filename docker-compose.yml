@@ -7,11 +7,15 @@ services:
     container_name: "app_db"
     image: "postgres:14"
     restart: always
+    environment:
+      POSTGRES_USER: wallet_user
+      POSTGRES_PASSWORD: psw
+      POSTGRES_MULTIPLE_DATABASES: wallet_db,wallet_db_test
+      POSTGRES_DB_PROD: wallet_db
+      POSTGRES_DB_TEST: wallet_db_test
     volumes:
         - ./pkg/pg_init_scripts:/docker-entrypoint-initdb.d
         - data:/var/lib/postgresql/data
-    env_file:
-        - .env
     ports:
         - "5432:5432"
     networks:
@@ -19,9 +23,22 @@ services:
   server:
     container_name: "server"
     build:
+      target: dev
       context: .
       dockerfile: ./Dockerfile
-    env_file: .env
+      args:
+        GOBIN: /app
+    environment:
+      GOBIN: /app
+      POSTGRES_USER: wallet_user
+      POSTGRES_PASSWORD: psw
+      POSTGRES_MULTIPLE_DATABASES: wallet_db,wallet_db_test
+      POSTGRES_DB_PROD: wallet_db
+      POSTGRES_DB_TEST: wallet_db_test
+
+      HTTP_LISTEN_ADDRESS: 0.0.0.0:8080
+    volumes:
+      - .:/go/src/github.com/skwol/wallet
     depends_on:
       - database
     ports:

@@ -2,7 +2,7 @@ package transaction
 
 import "time"
 
-type TransactionDTO struct {
+type DTO struct {
 	ID         int64
 	SenderID   int64
 	ReceiverID int64

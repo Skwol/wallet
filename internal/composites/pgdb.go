@@ -7,11 +7,6 @@ import (
 	"github.com/skwol/wallet/pkg/client/pgdb"
 )
 
-const (
-	HOST = "database"
-	PORT = 5432
-)
-
 type PgDBComposite struct {
 	client *pgdb.PGDB
 }

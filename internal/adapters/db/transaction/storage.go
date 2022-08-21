@@ -18,8 +18,8 @@ type dbTransaction struct {
 	Type       transaction.TranType
 }
 
-func (db dbTransaction) ToDTO() transaction.TransactionDTO {
-	return transaction.TransactionDTO{
+func (db dbTransaction) ToDTO() transaction.DTO {
+	return transaction.DTO{
 		ID:         db.ID,
 		SenderID:   db.SenderID,
 		ReceiverID: db.ReceiverID,
@@ -37,19 +37,19 @@ func NewStorage(db *pgdb.PGDB) (transaction.Storage, error) {
 	return &transactionStorage{db: db}, nil
 }
 
-func (as *transactionStorage) GetByID(ctx context.Context, id int64) (transaction.TransactionDTO, error) {
+func (as *transactionStorage) GetByID(ctx context.Context, id int64) (transaction.DTO, error) {
 	row := as.db.Conn.QueryRowContext(ctx, "SELECT id, sender_id, receiver_id, amount, date, tran_type FROM transaction WHERE id = $1;", id)
 	var tran dbTransaction
 	switch err := row.Scan(&tran.ID, &tran.SenderID, &tran.ReceiverID, &tran.Amount, &tran.Timestamp, &tran.Type); err {
 	case sql.ErrNoRows:
-		return transaction.TransactionDTO{}, nil
+		return transaction.DTO{}, nil
 	default:
 		return tran.ToDTO(), err
 	}
 }
 
-func (as *transactionStorage) GetAll(ctx context.Context, limit int, offset int) ([]transaction.TransactionDTO, error) {
-	var list []transaction.TransactionDTO
+func (as *transactionStorage) GetAll(ctx context.Context, limit int, offset int) ([]transaction.DTO, error) {
+	var list []transaction.DTO
 
 	rows, err := as.db.Conn.QueryContext(ctx, "SELECT id, sender_id, receiver_id, amount, date, tran_type FROM transaction ORDER BY ID ASC LIMIT $1 OFFSET $2", limit, offset)
 	if err != nil {
@@ -65,8 +65,8 @@ func (as *transactionStorage) GetAll(ctx context.Context, limit int, offset int)
 	return list, nil
 }
 
-func (as *transactionStorage) GetFiltered(ctx context.Context, filter *transaction.FilterTransactionsDTO, limit, offset int) ([]transaction.TransactionDTO, error) {
-	var list []transaction.TransactionDTO
+func (as *transactionStorage) GetFiltered(ctx context.Context, filter *transaction.FilterTransactionsDTO, limit, offset int) ([]transaction.DTO, error) {
+	var list []transaction.DTO
 	rows, err := as.db.Conn.QueryContext(ctx, newTransactionFilter(filter).BuildQuery(limit, offset))
 	if err != nil {
 		return list, err

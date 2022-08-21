@@ -12,10 +12,6 @@ const (
 	TranTypeTransfer TranType = "transfer"
 )
 
-var timeNow = func() time.Time {
-	return time.Now()
-}
-
 type TranType string
 
 // Wallet is an aggregate entity
@@ -26,13 +22,13 @@ type Wallet struct {
 	TransactionsToApply []Transaction
 }
 
-func newWallet(dto *CreateWalletDTO) (*Wallet, error) {
+func newWallet(dto *CreateWalletDTO, timestamp time.Time) (*Wallet, error) {
 	if dto.Balance < 0 {
 		return nil, fmt.Errorf("balance can not be less then zero")
 	}
 	var transactionsToApply []Transaction
 	if dto.Balance > 0 {
-		transactionsToApply = append(transactionsToApply, Transaction{Amount: dto.Balance, Timestamp: timeNow(), Type: TranTypeDeposit})
+		transactionsToApply = append(transactionsToApply, Transaction{Amount: dto.Balance, Timestamp: timestamp, Type: TranTypeDeposit})
 	}
 	return &Wallet{
 		Name:                dto.Name,
@@ -41,12 +37,12 @@ func newWallet(dto *CreateWalletDTO) (*Wallet, error) {
 	}, nil
 }
 
-func (w Wallet) toDTO() WalletDTO {
+func (w Wallet) toDTO() DTO {
 	transactionsToApply := make([]TransactionDTO, len(w.TransactionsToApply))
 	for i, tran := range w.TransactionsToApply {
 		transactionsToApply[i] = tran.toDTO()
 	}
-	return WalletDTO{
+	return DTO{
 		ID:                  w.ID,
 		Name:                w.Name,
 		Balance:             w.Balance,
@@ -54,7 +50,7 @@ func (w Wallet) toDTO() WalletDTO {
 	}
 }
 
-func (w *Wallet) Update(walletDTO *UpdateWalletDTO) (*Wallet, error) {
+func (w *Wallet) Update(walletDTO *UpdateWalletDTO, timestamp time.Time) (*Wallet, error) {
 	if walletDTO.Balance < 0 {
 		return nil, fmt.Errorf("balance can not be less then 0")
 	}
@@ -71,7 +67,7 @@ func (w *Wallet) Update(walletDTO *UpdateWalletDTO) (*Wallet, error) {
 		SenderID:   w.ID,
 		ReceiverID: w.ID,
 		Amount:     math.Abs(w.Balance - walletDTO.Balance),
-		Timestamp:  timeNow(),
+		Timestamp:  timestamp,
 		Type:       tType,
 	})
 	w.Balance = walletDTO.Balance
@@ -89,12 +85,5 @@ type Transaction struct {
 }
 
 func (t Transaction) toDTO() TransactionDTO {
-	return TransactionDTO{
-		ID:         t.ID,
-		SenderID:   t.SenderID,
-		ReceiverID: t.ReceiverID,
-		Amount:     t.Amount,
-		Timestamp:  t.Timestamp,
-		Type:       t.Type,
-	}
+	return TransactionDTO(t)
 }

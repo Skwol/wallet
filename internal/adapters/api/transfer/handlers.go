@@ -7,9 +7,11 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+
+	"github.com/skwol/wallet/pkg/logging"
+
 	adapters "github.com/skwol/wallet/internal/adapters/api"
 	"github.com/skwol/wallet/internal/domain/transfer"
-	"github.com/skwol/wallet/pkg/logging"
 )
 
 const transferURL = "/api/v1/transfers"
@@ -59,5 +61,9 @@ func (h *handler) createTransfer(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	w.Write(response)
+	if _, err := w.Write(response); err != nil {
+		logger.Errorf("error writing response: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error writing response: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
 }

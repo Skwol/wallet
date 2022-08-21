@@ -9,8 +9,14 @@ services:
     restart: always
     volumes:
         - ./pkg/pg_init_scripts:/docker-entrypoint-initdb.d
-    env_file:
-        - .env
+    environment:
+      POSTGRES_USER: wallet_user
+      POSTGRES_PASSWORD: psw
+      POSTGRES_MULTIPLE_DATABASES: wallet_db,wallet_db_test
+      POSTGRES_DB_PROD: wallet_db
+      POSTGRES_DB_TEST: wallet_db_test
+
+      HTTP_LISTEN_ADDRESS: 0.0.0.0:8080
     ports:
         - "5432:5432"
     networks:
@@ -20,7 +26,6 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile.test
-    env_file: .env
     depends_on:
       - database_test
     networks:

@@ -4,15 +4,7 @@ import (
 	"time"
 )
 
-func walletsToDTO(wallets []*Wallet) []WalletDTO {
-	result := make([]WalletDTO, len(wallets))
-	for i, wallet := range wallets {
-		result[i] = wallet.toDTO()
-	}
-	return result
-}
-
-type WalletDTO struct {
+type DTO struct {
 	ID                  int64
 	Name                string
 	Balance             float64
@@ -20,7 +12,7 @@ type WalletDTO struct {
 	Transactions        []TransactionDTO
 }
 
-func (d WalletDTO) toModel() Wallet {
+func (d DTO) toModel() Wallet {
 	return Wallet{
 		ID:      d.ID,
 		Name:    d.Name,

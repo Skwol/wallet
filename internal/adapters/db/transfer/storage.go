@@ -3,10 +3,13 @@ package transfer
 import (
 	"context"
 	"database/sql"
-	"fmt"
+
+	"github.com/pkg/errors"
+
+	"github.com/skwol/wallet/pkg/client/pgdb"
+	"github.com/skwol/wallet/pkg/logging"
 
 	"github.com/skwol/wallet/internal/domain/transfer"
-	"github.com/skwol/wallet/pkg/client/pgdb"
 )
 
 type dbWallet struct {
@@ -22,37 +25,44 @@ func (db dbWallet) ToDTO() transfer.WalletDTO {
 }
 
 type transferStorage struct {
-	db *pgdb.PGDB
+	db     *pgdb.PGDB
+	logger logging.Logger
 }
 
-func NewStorage(db *pgdb.PGDB) (transfer.Storage, error) {
-	return &transferStorage{db: db}, nil
+func NewStorage(db *pgdb.PGDB, logger logging.Logger) (transfer.Storage, error) {
+	return &transferStorage{db: db, logger: logger}, nil
 }
 
-func (ts transferStorage) Create(ctx context.Context, dto *transfer.CreateTransferDTO) (transfer.TransferDTO, error) {
-	var result transfer.TransferDTO
+func (ts transferStorage) Create(ctx context.Context, dto *transfer.CreateTransferDTO) (transfer.DTO, error) {
+	var result transfer.DTO
 	result.CreateTransferDTO = *dto
 	tx, err := ts.db.Conn.BeginTx(ctx, nil)
+	rollback := func() {
+		err := tx.Rollback()
+		if err != nil && !errors.Is(err, sql.ErrTxDone) {
+			ts.logger.Errorf("rollback transaction %s", err)
+		}
+	}
 	if err != nil {
-		tx.Rollback()
-		return result, fmt.Errorf("error beginning transaction: %w", err)
+		rollback()
+		return result, errors.Wrap(err, "error beginning transaction")
 	}
 	if _, err = tx.ExecContext(ctx, "UPDATE wallet SET balance=$1 WHERE id=$2;", dto.Sender.Balance, dto.Sender.ID); err != nil {
-		tx.Rollback()
-		return result, fmt.Errorf("error updating sender wallet: %w", err)
+		rollback()
+		return result, errors.Wrap(err, "error updating sender wallet")
 	}
 	if _, err = tx.ExecContext(ctx, "UPDATE wallet SET balance=$1 WHERE id=$2;", dto.Receiver.Balance, dto.Receiver.ID); err != nil {
-		tx.Rollback()
-		return result, fmt.Errorf("error updating receiver wallet: %w", err)
+		rollback()
+		return result, errors.Wrap(err, "error updating receiver wallet")
 	}
 	row := tx.QueryRow("INSERT INTO transaction (sender_id, receiver_id, amount, date, tran_type) VALUES ($1, $2, $3, $4, 'transfer') RETURNING id;", dto.Sender.ID, dto.Receiver.ID, dto.Amount, dto.Timestamp)
 
 	if err = row.Scan(&result.ID); err != nil {
-		tx.Rollback()
+		rollback()
 		return result, err
 	}
 	if err = tx.Commit(); err != nil {
-		return result, fmt.Errorf("error during commit")
+		return result, errors.Wrap(err, "error during commit")
 	}
 	return result, nil
 }

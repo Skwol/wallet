@@ -19,8 +19,8 @@ type Transaction struct {
 	Type       TranType
 }
 
-func (t Transaction) ToDTO() *TransactionDTO {
-	return &TransactionDTO{
+func (t Transaction) ToDTO() *DTO {
+	return &DTO{
 		ID:         t.ID,
 		SenderID:   t.SenderID,
 		ReceiverID: t.ReceiverID,

@@ -6,7 +6,7 @@ import (
 	"github.com/skwol/wallet/internal/domain/wallet"
 )
 
-func newWallet(dto wallet.WalletDTO) Wallet {
+func newWallet(dto wallet.DTO) Wallet {
 	transactions := make([]Transaction, 0, len(dto.Transactions))
 	for _, t := range dto.Transactions {
 		transactions = append(transactions, newTransaction(t))

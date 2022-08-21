@@ -27,14 +27,7 @@ After downloading psql image and running couple containers migrations has to run
 #### Running migrations
 
 ```
-export POSTGRESQL_URL="postgres://wallet_user:psw@localhost:5432/wallet_db?sslmode=disable"
-migrate -database ${POSTGRESQL_URL} -path db/migrations up 
-```
-#### Removing migrations
-
-```
-export POSTGRESQL_URL="postgres://wallet_user:psw@localhost:5432/wallet_db?sslmode=disable"
-migrate -database ${POSTGRESQL_URL} -path db/migrations down 
+make db-migrate
 ```
 
 ## Generate some fake data

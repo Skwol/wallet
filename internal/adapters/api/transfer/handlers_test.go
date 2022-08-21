@@ -11,15 +11,19 @@ import (
 	"reflect"
 	"sync"
 	"testing"
+	"time"
 
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/gorilla/mux"
-	dbtransfer "github.com/skwol/wallet/internal/adapters/db/transfer"
-	domaintransfer "github.com/skwol/wallet/internal/domain/transfer"
+
 	"github.com/skwol/wallet/pkg/client/pgdb"
+	"github.com/skwol/wallet/pkg/clock"
 	"github.com/skwol/wallet/pkg/logging"
 	"github.com/skwol/wallet/pkg/testdb"
+
+	dbtransfer "github.com/skwol/wallet/internal/adapters/db/transfer"
+	domaintransfer "github.com/skwol/wallet/internal/domain/transfer"
 )
 
 var (
@@ -35,7 +39,7 @@ func setup(t *testing.T) {
 		router = mux.NewRouter()
 
 		var err error
-		dbClient, err = testdb.DBClient()
+		dbClient, err = testdb.DBClient(logging.GetLogger())
 		if err != nil {
 			t.Fatalf("error creating db client: %s", err.Error())
 		}
@@ -43,11 +47,12 @@ func setup(t *testing.T) {
 			t.Fatal("missing db client")
 		}
 
-		storage, err := dbtransfer.NewStorage(dbClient)
+		storage, err := dbtransfer.NewStorage(dbClient, logging.GetLogger())
 		if err != nil {
 			t.Fatalf("error creating transfer storage %s", err.Error())
 		}
-		service, err := domaintransfer.NewService(storage)
+		clk := clock.NewFake(time.Date(2021, 10, 10, 10, 0, 0, 0, time.UTC))
+		service, err := domaintransfer.NewService(storage, logging.GetLogger(), clk)
 		if err != nil {
 			t.Fatalf("error creating transfer service %s", err.Error())
 		}
@@ -55,7 +60,10 @@ func setup(t *testing.T) {
 		if err != nil {
 			t.Fatalf("error creating transfer handler %s", err.Error())
 		}
-		transferHandler := handlerInterface.(*handler)
+		transferHandler, ok := handlerInterface.(*handler)
+		if !ok {
+			t.Fatalf("wrong interface")
+		}
 
 		transferHandler.Register(router)
 	})
@@ -134,6 +142,11 @@ func TestCreateTransfer(t *testing.T) {
 			if resp == nil {
 				t.Fatalf("test %s: missing response", tt.name)
 			}
+			defer func() {
+				if err := resp.Body.Close(); err != nil {
+					t.Fatalf("error closing body")
+				}
+			}()
 			if resp.StatusCode != tt.wantStatusCode {
 				t.Fatalf("test %s: expected status %d, got %d", tt.name, tt.wantStatusCode, resp.StatusCode)
 			}
@@ -143,7 +156,7 @@ func TestCreateTransfer(t *testing.T) {
 			}
 
 			if tt.want.Amount == 0 {
-				var got domaintransfer.TransferDTO
+				var got domaintransfer.DTO
 				if err := json.Unmarshal(result, &got); err == nil {
 					t.Fatalf("test %s: should not receive correct response from server", tt.name)
 				}

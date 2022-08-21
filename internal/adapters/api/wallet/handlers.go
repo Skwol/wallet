@@ -8,9 +8,11 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+
+	"github.com/skwol/wallet/pkg/logging"
+
 	adapters "github.com/skwol/wallet/internal/adapters/api"
 	"github.com/skwol/wallet/internal/domain/wallet"
-	"github.com/skwol/wallet/pkg/logging"
 )
 
 const (
@@ -21,10 +23,11 @@ const (
 
 type handler struct {
 	walletService wallet.Service
+	logger        logging.Logger
 }
 
-func NewHandler(service wallet.Service) (adapters.Handler, error) {
-	return &handler{walletService: service}, nil
+func NewHandler(service wallet.Service, logger logging.Logger) (adapters.Handler, error) {
+	return &handler{walletService: service, logger: logger}, nil
 }
 
 func (h *handler) Register(router *mux.Router) {
@@ -63,7 +66,11 @@ func (h *handler) getWallet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write(response)
+	if _, err := w.Write(response); err != nil {
+		logger.Errorf("error writing response: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error writing response: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *handler) getWalletWithTransactions(w http.ResponseWriter, r *http.Request) {
@@ -103,7 +110,11 @@ func (h *handler) getWalletWithTransactions(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	w.Write(response)
+	if _, err := w.Write(response); err != nil {
+		logger.Errorf("error writing response: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error writing response: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *handler) updateWallet(w http.ResponseWriter, r *http.Request) {
@@ -142,7 +153,11 @@ func (h *handler) updateWallet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write(response)
+	if _, err := w.Write(response); err != nil {
+		logger.Errorf("error writing response: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error writing response: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *handler) createWallet(w http.ResponseWriter, r *http.Request) {
@@ -178,7 +193,11 @@ func (h *handler) createWallet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
-	w.Write(response)
+	if _, err := w.Write(response); err != nil {
+		logger.Errorf("error writing response: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error writing response: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (h *handler) getAllWallets(w http.ResponseWriter, r *http.Request) {
@@ -218,5 +237,9 @@ func (h *handler) getAllWallets(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write(response)
+	if _, err := w.Write(response); err != nil {
+		logger.Errorf("error writing response: %s", err.Error())
+		http.Error(w, fmt.Sprintf("error writing response: %s", err.Error()), http.StatusInternalServerError)
+		return
+	}
 }

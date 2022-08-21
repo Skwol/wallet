@@ -9,7 +9,7 @@ import (
 
 var csvHeaders = []string{"Transaction ID", "Sender ID", "Receiver ID", "Amount", "Timestamp", "Type"}
 
-func newTransaction(dto transaction.TransactionDTO) Transaction {
+func newTransaction(dto transaction.DTO) Transaction {
 	return Transaction{
 		ID:         dto.ID,
 		SenderID:   dto.SenderID,

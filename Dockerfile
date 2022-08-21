@@ -1,11 +1,24 @@
-FROM golang:1.17.5-alpine3.15 AS builder
+ARG GOBIN=/app
+
+FROM golang:1.18-alpine as builder
+ARG GOBIN
 COPY . /go/src/github.com/skwol/wallet
 WORKDIR /go/src/github.com/skwol/wallet
-RUN go mod verify && CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o build/app github.com/skwol/wallet/cmd/
+RUN apk add --update make gcc
+RUN GOBIN=$GOBIN
+RUN make install-tools
+RUN make build
 
-FROM alpine:latest
+# Dev image
+FROM builder AS dev
+EXPOSE 8080
+ENTRYPOINT make watch
+
+FROM alpine:3.9
+ARG GOBIN
 RUN apk --no-cache add ca-certificates
-WORKDIR /root/
-COPY --from=builder /go/src/github.com/skwol/wallet/build/app ./
+WORKDIR /app/
+COPY --from=builder ${GOBIN}/wallet wallet
+COPY --from=builder ${GOBIN}/walletctl walletctl
 EXPOSE 8080 8080
-CMD ["./app"]
+CMD ["./wallet"]

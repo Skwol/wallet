@@ -13,14 +13,17 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gorilla/mux"
+
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
-	"github.com/gorilla/mux"
-	dbtransaction "github.com/skwol/wallet/internal/adapters/db/transaction"
-	domaintransaction "github.com/skwol/wallet/internal/domain/transaction"
+
 	"github.com/skwol/wallet/pkg/client/pgdb"
 	"github.com/skwol/wallet/pkg/logging"
 	"github.com/skwol/wallet/pkg/testdb"
+
+	dbtransaction "github.com/skwol/wallet/internal/adapters/db/transaction"
+	domaintransaction "github.com/skwol/wallet/internal/domain/transaction"
 )
 
 var (
@@ -36,7 +39,7 @@ func setup(t *testing.T) {
 		router = mux.NewRouter()
 
 		var err error
-		dbClient, err = testdb.DBClient()
+		dbClient, err = testdb.DBClient(logging.GetLogger())
 		if err != nil {
 			t.Fatalf("error creating db client: %s", err.Error())
 		}
@@ -56,7 +59,10 @@ func setup(t *testing.T) {
 		if err != nil {
 			t.Fatalf("error creating transaction handler %s", err.Error())
 		}
-		transactionHandler := handlerInterface.(*handler)
+		transactionHandler, ok := handlerInterface.(*handler)
+		if !ok {
+			t.Fatalf("wrong interface")
+		}
 
 		transactionHandler.Register(router)
 	})
@@ -136,6 +142,11 @@ func TestGetTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error getting response: %s", err.Error())
 	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			t.Fatalf("error closing body")
+		}
+	}()
 	if resp.StatusCode != http.StatusNotFound {
 		t.Fatalf("expected status %d, got %d", http.StatusNotFound, resp.StatusCode)
 	}
@@ -144,6 +155,11 @@ func TestGetTransaction(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error getting response: %s", err.Error())
 	}
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			t.Fatalf("error closing body")
+		}
+	}()
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, resp.StatusCode)
 	}
@@ -216,6 +232,11 @@ func TestGetTransactions(t *testing.T) {
 			if resp == nil {
 				t.Fatalf("test %s: missing response", tt.name)
 			}
+			defer func() {
+				if err := resp.Body.Close(); err != nil {
+					t.Fatalf("error closing body")
+				}
+			}()
 			if resp.StatusCode != tt.wantStatusCode {
 				t.Fatalf("test %s: expected status %d, got %d", tt.name, tt.wantStatusCode, resp.StatusCode)
 			}
@@ -422,6 +443,11 @@ func TestGetTransactions(t *testing.T) {
 			if resp == nil {
 				t.Fatalf("test %s: missing response", tt.name)
 			}
+			defer func() {
+				if err := resp.Body.Close(); err != nil {
+					t.Fatalf("error closing body")
+				}
+			}()
 			if resp.StatusCode != tt.wantStatusCode {
 				t.Fatalf("test %s: expected status %d, got %d", tt.name, tt.wantStatusCode, resp.StatusCode)
 			}

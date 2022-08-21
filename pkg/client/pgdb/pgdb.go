@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"os"
 
+	// psql connection created in this package
 	_ "github.com/lib/pq"
 )
 
 const (
-	HOST      = "database"
-	HOST_TEST = "database_test"
-	PORT      = 5432
+	host     = "database"
+	hostTest = "database_test"
+	port     = 5432
 )
 
 type PGDB struct {
@@ -23,13 +24,13 @@ func NewClient(env string) (*PGDB, error) {
 	username := os.Getenv("POSTGRES_USER")
 	password := os.Getenv("POSTGRES_PASSWORD")
 	database := os.Getenv("POSTGRES_DB_PROD")
-	host := HOST
+	host := host
 	if env != "production" {
 		database = os.Getenv("POSTGRES_DB_TEST")
-		host = HOST_TEST
+		host = hostTest
 	}
 	dsn := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
-		host, PORT, username, password, database)
+		host, port, username, password, database)
 	conn, err := sql.Open("postgres", dsn)
 	if err != nil {
 		return db, err

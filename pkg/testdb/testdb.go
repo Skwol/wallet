@@ -3,12 +3,14 @@ package testdb
 import (
 	"fmt"
 
-	"github.com/golang-migrate/migrate/v4"
+	migrate "github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
+
 	"github.com/skwol/wallet/pkg/client/pgdb"
+	"github.com/skwol/wallet/pkg/logging"
 )
 
-func DBClient() (*pgdb.PGDB, error) {
+func DBClient(logger logging.Logger) (*pgdb.PGDB, error) {
 	client, err := pgdb.NewClient("test")
 	if err != nil {
 		return nil, fmt.Errorf("error creating db client: %w", err)
@@ -20,12 +22,14 @@ func DBClient() (*pgdb.PGDB, error) {
 	if err != nil {
 		return nil, fmt.Errorf("error getting migrate driver: %w", err)
 	}
-	migrationsPath := "/go/src/github.com/skwol/wallet/pkg/migrations"
+	migrationsPath := "/go/src/github.com/skwol/wallet/db/migrations"
 	m, err := migrate.NewWithDatabaseInstance(fmt.Sprintf("file:%s", migrationsPath), "postgres", driver)
 	if err != nil {
 		return nil, fmt.Errorf("error creating migrate instance: %w", err)
 	}
-	m.Down()
+	if err := m.Down(); err != nil {
+		logger.Warn("error during migrations down %s", err)
+	}
 	if err := m.Up(); err != nil {
 		return nil, fmt.Errorf("error running up migrations: %w", err)
 	}

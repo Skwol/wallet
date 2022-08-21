@@ -69,7 +69,7 @@ func newStringFilter(values ...string) stringFilter {
 }
 
 func (f stringFilter) Empty() bool {
-	return f == nil || len(f) == 0
+	return len(f) == 0
 }
 
 func (f stringFilter) Build(fieldName string) string {
@@ -90,7 +90,7 @@ func newInt64Filter(values ...int64) int64Filter {
 }
 
 func (f int64Filter) Empty() bool {
-	return f == nil || len(f) == 0
+	return len(f) == 0
 }
 
 func (f int64Filter) Build(fieldName string) string {

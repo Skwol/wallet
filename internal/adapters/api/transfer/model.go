@@ -6,7 +6,7 @@ import (
 	"github.com/skwol/wallet/internal/domain/transfer"
 )
 
-func newTransfer(dto transfer.TransferDTO) Transfer {
+func newTransfer(dto transfer.DTO) Transfer {
 	return Transfer{
 		ID:        dto.ID,
 		Amount:    dto.Amount,
