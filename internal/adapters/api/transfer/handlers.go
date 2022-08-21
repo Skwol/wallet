@@ -37,7 +37,7 @@ func (h *handler) createTransfer(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var request Transfer
+	var request CreateTransferRequest
 	if err := json.Unmarshal(body, &request); err != nil {
 		h.logger.Errorf("error unmarshaling request: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error unmarshaling request: %s", err.Error()), http.StatusUnprocessableEntity)

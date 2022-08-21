@@ -1,0 +1,138 @@
+openapi: 3.0.3
+info:
+  title: "Wallet API"
+  description: "Wallet API"
+  version: "1.0.0"
+servers:
+  - url: "http://localhost:8080/api/v1"
+    description: Local
+tags:
+  - name: Transfer
+    description: transfer endpoints
+
+paths:
+  /transfers:
+    post:
+      summary: "create transfer"
+      operationId: "CreateTransfer"
+      tags:
+        - Transfer
+      requestBody:
+        $ref: '#/components/requestBodies/CreateTransferRequest'
+      responses:
+        "201":
+          description: "Wallets"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transfer"
+        "422":
+          description: "Unprocessable entity"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    Transfer:
+      type: object
+      required:
+        - id
+        - sender
+        - receiver
+        - amount
+      properties:
+        id:
+          type: integer
+          description: transfer id
+        sender:
+          $ref: '#/components/schemas/Wallet'
+        receiver:
+          $ref: '#/components/schemas/Wallet'
+        amount:
+          type: number
+          description: transfer amount
+        timestamp:
+          example: "2022-05-26T14:45:37Z"
+          type: string
+          format: date-time
+    Wallet:
+      type: object
+      required:
+        - id
+        - balance
+      properties:
+        id:
+          type: integer
+          description: Wallet id
+        balance:
+          type: number
+          description: Wallet balance
+    CreateTransferRequest:
+      type: object
+      required:
+        - amount
+        - sender_id
+        - receiver_id
+      properties:
+        amount:
+          type: number
+          nullable: false
+          example: "100.4"
+        sender_id:
+          type: integer
+          example: 1
+        receiver_id:
+          type: integer
+          example: 2
+    Error:
+      type: "object"
+      properties:
+        status:
+          type: "string"
+        errorType:
+          type: "string"
+        error:
+          type: "string"
+        code:
+          type: integer
+      required:
+        - "status"
+        - "error"
+      example:
+        status: "error"
+        errorType: "bad_data"
+        error: "some value is invalid"
+        code: 1000
+
+  requestBodies:
+    CreateTransferRequest:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/CreateTransferRequest'
+      description: request to transfer money
+
+  parameters:
+    PathParamWalletID:
+      in: path
+      name: wallet_id
+      schema:
+        type: number
+        example: 1
+      required: true
+    QueryParamLimit:
+      in: "query"
+      name: "limit"
+      schema:
+        type: "number"
+      description: "Limit of how many records returned"
+      required: true
+    QueryParamOffset:
+      in: "query"
+      name: "offset"
+      schema:
+        type: "number"
+      description: "Offset of returned records"
+      required: true

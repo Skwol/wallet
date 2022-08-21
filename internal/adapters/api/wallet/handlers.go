@@ -17,7 +17,7 @@ import (
 
 const (
 	walletURL                 = "/api/v1/wallets/{record_id}"
-	walletWithTransactionsURL = "/api/v1/wallets-with-transactions/{record_id}"
+	walletWithTransactionsURL = "/api/v1/wallets/{record_id}/transactions"
 	walletsURL                = "/api/v1/wallets"
 )
 
@@ -114,6 +114,7 @@ func (h *handler) getWalletWithTransactions(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *handler) updateWallet(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("--------------------------------------------------")
 	id, err := strconv.ParseInt(mux.Vars(r)["record_id"], 10, 64)
 	if err != nil {
 		h.logger.Errorf("error parsing id: %s", err.Error())
@@ -221,7 +222,7 @@ func (h *handler) getAllWallets(w http.ResponseWriter, r *http.Request) {
 	for _, dto := range walletDTOs {
 		wallets = append(wallets, newWallet(dto))
 	}
-	response, err := json.Marshal(wallets)
+	response, err := json.Marshal(Wallets{Wallets: &wallets})
 	if err != nil {
 		h.logger.Errorf("error marshaling wallets: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error marshaling wallets: %s", err.Error()), http.StatusInternalServerError)

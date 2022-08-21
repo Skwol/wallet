@@ -1,0 +1,242 @@
+openapi: 3.0.3
+info:
+  title: "Wallet API"
+  description: "Wallet API"
+  version: "1.0.0"
+servers:
+  - url: "http://localhost:8080/api/v1"
+    description: Local
+tags:
+  - name: Wallet
+    description: wallet endpoints
+
+paths:
+  /wallets/{wallet_id}:
+    get:
+      summary: "Returns wallet"
+      operationId: "GetWallet"
+      tags:
+        - Wallet
+      parameters:
+        - $ref: "#/components/parameters/PathParamWalletID"
+      responses:
+        "200":
+          description: "Wallet"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallet"
+        "422":
+          description: "Unprocessable entity"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      summary: "update wallet"
+      operationId: "UpdateWallet"
+      tags:
+        - Wallet
+      parameters:
+        - $ref: "#/components/parameters/PathParamWalletID"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - balance
+                - name
+              properties:
+                balance:
+                  type: number
+                  nullable: false
+                  example: "100.4"
+                name:
+                  type: string
+                  example: "wallet name"
+      responses:
+        "200":
+          description: "Wallet"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallet"
+        "422":
+          description: "Unprocessable entity"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /wallets/{wallet_id}/transactions:
+    get:
+      summary: "Returns wallet with transactions"
+      operationId: "GetWalletWithTransactions"
+      tags:
+        - Wallet
+      parameters:
+        - $ref: "#/components/parameters/PathParamWalletID"
+        - $ref: "#/components/parameters/QueryParamLimit"
+        - $ref: "#/components/parameters/QueryParamOffset"
+      responses:
+        "200":
+          description: "Wallet with transactions"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallet"
+        "422":
+          description: "Unprocessable entity"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /wallets:
+    get:
+      summary: "Returns all wallets with limit and offset"
+      operationId: "GetWallets"
+      tags:
+        - Wallet
+      parameters:
+        - $ref: "#/components/parameters/QueryParamLimit"
+        - $ref: "#/components/parameters/QueryParamOffset"
+      responses:
+        "200":
+          description: "Wallets"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallets"
+        "422":
+          description: "Unprocessable entity"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      summary: "create wallet"
+      operationId: "CreateWallet"
+      tags:
+        - Wallet
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - balance
+                - name
+              properties:
+                balance:
+                  type: number
+                  nullable: false
+                  example: "100.4"
+                name:
+                  type: string
+                  example: "wallet name"
+      responses:
+        "201":
+          description: "Wallets"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallets"
+        "422":
+          description: "Unprocessable entity"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    Wallet:
+      type: object
+      required:
+        - id
+        - balance
+      properties:
+        id:
+          type: integer
+          description: Wallet id
+        balance:
+          type: number
+          description: Wallet balance
+        transactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Transaction"
+    Wallets:
+      type: object
+      properties:
+        Wallets:
+          type: array
+          items:
+            $ref: "#/components/schemas/Wallet"
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: transaction id
+        sender_id:
+          type: integer
+          description: sender wallet id
+        receiver_id:
+          type: integer
+          description: receiver wallet id
+        amount:
+          type: number
+          description: transfer amount
+        timestamp:
+          example: "2022-05-26T14:45:37Z"
+          type: string
+          format: date-time
+        type:
+          type: string
+          enum:
+            - deposit
+            - withdraw
+            - transfer
+    Error:
+      type: "object"
+      properties:
+        status:
+          type: "string"
+        errorType:
+          type: "string"
+        error:
+          type: "string"
+        code:
+          type: integer
+      required:
+        - "status"
+        - "error"
+      example:
+        status: "error"
+        errorType: "bad_data"
+        error: "some value is invalid"
+        code: 1000
+
+  parameters:
+    PathParamWalletID:
+      in: path
+      name: wallet_id
+      schema:
+        type: number
+        example: 1
+      required: true
+    QueryParamLimit:
+      in: "query"
+      name: "limit"
+      schema:
+        type: "number"
+      description: "Limit of how many records returned"
+      required: true
+    QueryParamOffset:
+      in: "query"
+      name: "offset"
+      schema:
+        type: "number"
+      description: "Offset of returned records"
+      required: true

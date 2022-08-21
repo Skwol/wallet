@@ -1,0 +1,235 @@
+openapi: 3.0.3
+info:
+  title: "Wallet API"
+  description: "Wallet API"
+  version: "1.0.0"
+servers:
+  - url: "http://localhost:8080/api/v1"
+    description: Local
+tags:
+  - name: Transaction
+    description: transaction endpoints
+
+paths:
+  /transactions/{transaction_id}:
+    get:
+      summary: "Returns transaction"
+      operationId: "GetTransaction"
+      tags:
+        - Transaction
+      parameters:
+        - $ref: "#/components/parameters/PathParamTransactionID"
+      responses:
+        "200":
+          description: "Transaction"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transaction"
+        "422":
+          description: "Unprocessable entity"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /transactions:
+    get:
+      summary: "Returns all transactions with limit and offset"
+      operationId: "GetTransactions"
+      tags:
+        - Transaction
+      parameters:
+        - $ref: "#/components/parameters/QueryParamLimit"
+        - $ref: "#/components/parameters/QueryParamOffset"
+      responses:
+        "200":
+          description: "Transactions"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transactions"
+        "422":
+          description: "Unprocessable entity"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    post:
+      summary: "Returns filtered transaction"
+      operationId: "GetFilteredTransaction"
+      tags:
+        - Transaction
+      parameters:
+        - $ref: "#/components/parameters/QueryParamLimit"
+        - $ref: "#/components/parameters/QueryParamOffset"
+      requestBody:
+        $ref: '#/components/requestBodies/GetFilteredRequestJSON'
+      responses:
+        "200":
+          description: "Transactions"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transactions"
+        "422":
+          description: "Unprocessable entity"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /transactions-report:
+    post:
+      summary: "Returns csv filtered transaction"
+      operationId: "GetFilteredTransactionReport"
+      tags:
+        - Transaction
+      parameters:
+        - $ref: "#/components/parameters/QueryParamLimit"
+        - $ref: "#/components/parameters/QueryParamOffset"
+      requestBody:
+        $ref: '#/components/requestBodies/GetFilteredRequestCSV'
+      responses:
+        "200":
+          description: "Transactions"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transactions"
+        "422":
+          description: "Unprocessable entity"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    Transaction:
+      type: object
+      required:
+        - id
+        - sender_id
+        - receiver_id
+        - amount
+        - timestamp
+        - type
+      properties:
+        id:
+          type: integer
+          description: transaction id
+        sender_id:
+          type: integer
+          description: sender wallet id
+        receiver_id:
+          type: integer
+          description: receiver wallet id
+        amount:
+          type: number
+          description: transfer amount
+        timestamp:
+          example: "2022-05-26T14:45:37Z"
+          type: string
+          format: date-time
+        type:
+          type: string
+          enum:
+            - deposit
+            - withdraw
+            - transfer
+    Transactions:
+      type: object
+      properties:
+        Transactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Transaction"
+    GetFilteredRequest:
+      type: object
+      properties:
+        sender_ids:
+          type: array
+          items:
+            type: integer
+        receiver_ids:
+          type: array
+          items:
+            type: integer
+        types:
+          type: array
+          items:
+            type: string
+        amount:
+          $ref: "#/components/schemas/FloatRangeFilter"
+        timestamp:
+          $ref: "#/components/schemas/DateRangeFilter"
+    FloatRangeFilter:
+      type: object
+      properties:
+        from:
+          type: number
+        to:
+          type: number
+    DateRangeFilter:
+      type: object
+      properties:
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+    Error:
+      type: "object"
+      properties:
+        status:
+          type: "string"
+        errorType:
+          type: "string"
+        error:
+          type: "string"
+        code:
+          type: integer
+      required:
+        - "status"
+        - "error"
+      example:
+        status: "error"
+        errorType: "bad_data"
+        error: "some value is invalid"
+        code: 1000
+  requestBodies:
+    GetFilteredRequestJSON:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/GetFilteredRequest'
+      description: filters for transaction
+    GetFilteredRequestCSV:
+      content:
+        text/csv:
+          schema:
+            $ref: '#/components/schemas/GetFilteredRequest'
+      description: filters for transaction
+
+  parameters:
+    PathParamTransactionID:
+      in: path
+      name: transaction_id
+      schema:
+        type: number
+        example: 1
+      required: true
+    QueryParamLimit:
+      in: "query"
+      name: "limit"
+      schema:
+        type: "number"
+      description: "Limit of how many records returned"
+      required: true
+    QueryParamOffset:
+      in: "query"
+      name: "offset"
+      schema:
+        type: "number"
+      description: "Offset of returned records"
+      required: true

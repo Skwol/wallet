@@ -1,0 +1,61 @@
+openapi: 3.0.3
+info:
+  title: "Wallet API"
+  description: "Wallet API"
+  version: "1.0.0"
+servers:
+  - url: "http://localhost:8080/api/v1"
+    description: Local
+tags:
+  - name: Common
+    description: common endpoints
+
+paths:
+  /generate_fake_data:
+    post:
+      summary: "create fake records"
+      operationId: "CreateFakeData"
+      tags:
+        - FakeRecords
+      parameters:
+        - $ref: "#/components/parameters/QueryParamRecords"
+      responses:
+        "201":
+          description: "Fake data created"
+        "422":
+          description: "Unprocessable entity"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  schemas:
+    Error:
+      type: "object"
+      properties:
+        status:
+          type: "string"
+        errorType:
+          type: "string"
+        error:
+          type: "string"
+        code:
+          type: integer
+      required:
+        - "status"
+        - "error"
+      example:
+        status: "error"
+        errorType: "bad_data"
+        error: "some value is invalid"
+        code: 1000
+
+  parameters:
+    QueryParamRecords:
+      in: "query"
+      name: "records"
+      schema:
+        type: "number"
+      description: "Number of records to generate in db"
+      required: true

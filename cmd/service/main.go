@@ -9,9 +9,10 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/skwol/wallet/internal/composites"
 	"github.com/skwol/wallet/pkg/clock"
 	"github.com/skwol/wallet/pkg/logging"
+
+	"github.com/skwol/wallet/internal/composites"
 )
 
 func main() {

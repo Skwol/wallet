@@ -39,113 +39,15 @@ curl -X POST 'http://localhost:8080/api/v1/generate_fake_data?records=500'
 Use `records` query param to decide how many wallets you need. This request should only be used when there is an empty DB with migrations run.
 
 ## Available endpoints:
-1. GET /api/v1/wallets/{record_id} get wallet by id, `record_id` is mandatory.
-2. GET /api/v1/wallets?limit=10&offset=0 - get all wallets with pagination using limit and offset, `limit` and `offset` are mandatory.
-3. GET /api/v1/wallets-with-transactions/{record_id}?limit=10&offset=0 - get wallet by id and all associated transactions. Pagination for transactions using limit and offset. `limit`, `offset` and `record_id` are mandatory.
-4. POST /api/v1/wallets - create wallet with json request
-```
-curl -X POST 'http://localhost:8080/api/v1/wallets' --header 'Content-Type: application/json' --data-raw '{
-    "name": "new wallet name two",
-    "balance": 500
-}'
-```
-Response:
-```
-{"id":503,"name":"new wallet name two","balance":500}
-```
-Create wallet creates a deposit transaction as a side effect if balance > 0.
+Can be found in internal/adapters/api/{model_name}/openapi.yaml
 
-5. PATCH /api/v1/wallets/{record_id} - update wallet with json request
+File (csv) downloading can be done: 
 ```
-curl -X PATCH 'http://localhost:8080/api/v1/wallets/503' --header 'Content-Type: application/json' --data-raw '{
-    "name": "new wallet name two",
-    "balance": 600
-}'
-```
-Response:
-```
-{"id":503,"name":"new wallet name two","balance":600}
-```
-Update wallet creates a deposit or withdraw transaction as a side effect if balance is being updated.
-
-6. POST /api/v1/transfers - creates transaction between wallets with json request:
-```
-curl -X POST 'http://localhost:8080/api/v1/transfers' \
---header 'Content-Type: application/json' \
---data-raw '{
-    "amount": 100,
-    "sender": {
-        "id": 503
-    },
-    "receiver":  {
-        "id": 502
-    }
-}'
-```
-Response:
-```
-{
-  "id": 505,
-  "amount": 100,
-  "timestamp": "2022-01-06T16:20:19.5784222Z",
-  "sender": {
-    "id": 503,
-    "balance": 500
-  },
-  "receiver": {
-    "id": 502,
-    "balance": 600
-  }
-}
-```
-
-7. GET /api/v1/transactions/{record_id} get transaction by id, `record_id` is mandatory
-8. GET /api/v1/transactions?limit=10&offset=0 get all transactions with pagination using limit and offset, `limit` and `offset` are mandatory.
-9. POST /api/v1/transactions?limit=100&offset=0 - request transaction with json filter:
-```
-curl -X POST 'http://localhost:8080/api/v1/transfers' \
---header 'Content-Type: application/json' \
+curl -X POST 'http://localhost:8080/api/v1/transactions-report?limit=100&offset=0' \
+--header 'Content-Type: text/csv' \
 --data-raw '{
     "sender_ids": [
-        1,
-        2
-    ],
-    "receiver_ids": [
-        1,
-        2
-    ],
-    "types": [
-        "deposit"
-    ],
-    "timestamp": {
-        "from": "2022-01-06T16:03:30Z",
-        "to": "2022-01-06T16:03:33Z"
-    }, 
-    "amount": {
-        "from": 100,
-        "to": 350
-    }
-}'
+        501
+    ]
+}' > ~/ex.csv
 ```
-Response:
-```
-[
-    {
-        "id": 1,
-        "sender_id": 1,
-        "receiver_id": 1,
-        "amount": 153.3353,
-        "timestamp": "2022-01-06T16:03:30.618775Z",
-        "type": "deposit"
-    },
-    {
-        "id": 2,
-        "sender_id": 2,
-        "receiver_id": 2,
-        "amount": 307.3449,
-        "timestamp": "2022-01-06T16:03:30.626132Z",
-        "type": "deposit"
-    }
-]
-```
-10. POST /api/v1/transactions-report?limit=100&offset=0 - request transaction with json filter and receive response as csv.
