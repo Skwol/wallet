@@ -26,10 +26,11 @@ const (
 
 type handler struct {
 	transactionService transaction.Service
+	logger             logging.Logger
 }
 
-func NewHandler(service transaction.Service) (adapters.Handler, error) {
-	return &handler{transactionService: service}, nil
+func NewHandler(service transaction.Service, logger logging.Logger) (adapters.Handler, error) {
+	return &handler{transactionService: service, logger: logger}, nil
 }
 
 func (h *handler) Register(router *mux.Router) {
@@ -41,17 +42,15 @@ func (h *handler) Register(router *mux.Router) {
 }
 
 func (h *handler) getTransaction(w http.ResponseWriter, r *http.Request) {
-	logger := logging.GetLogger()
-
 	id, err := strconv.ParseInt(mux.Vars(r)["record_id"], 10, 64)
 	if err != nil {
-		logger.Errorf("error parsing id: %s", err.Error())
+		h.logger.Errorf("error parsing id: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error parsing id: %s", err.Error()), http.StatusUnprocessableEntity)
 		return
 	}
 	transactionDTO, err := h.transactionService.GetByID(r.Context(), id)
 	if err != nil {
-		logger.Errorf("error returned from service: %s", err.Error())
+		h.logger.Errorf("error returned from service: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error returned from service: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
@@ -61,37 +60,36 @@ func (h *handler) getTransaction(w http.ResponseWriter, r *http.Request) {
 	}
 	response, err := json.Marshal(newTransaction(transactionDTO))
 	if err != nil {
-		logger.Errorf("error marshaling transaction: %s", err.Error())
+		h.logger.Errorf("error marshaling transaction: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error marshaling transaction: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
 
 	if _, err := w.Write(response); err != nil {
-		logger.Errorf("error writing response: %s", err.Error())
+		h.logger.Errorf("error writing response: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error writing response: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
 }
 
 func (h *handler) getAllTransactions(w http.ResponseWriter, r *http.Request) {
-	logger := logging.GetLogger()
 	limit, err := strconv.Atoi(r.FormValue("limit"))
 	if err != nil {
-		logger.Errorf("error parsing limit query param: %s", err.Error())
+		h.logger.Errorf("error parsing limit query param: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error parsing limit query param: %s", err.Error()), http.StatusUnprocessableEntity)
 		return
 	}
 
 	offset, err := strconv.Atoi(r.FormValue("offset"))
 	if err != nil {
-		logger.Errorf("error parsing offset query param: %s", err.Error())
+		h.logger.Errorf("error parsing offset query param: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error parsing offset query param: %s", err.Error()), http.StatusUnprocessableEntity)
 		return
 	}
 
 	transactionDTOs, err := h.transactionService.GetAll(r.Context(), limit, offset)
 	if err != nil {
-		logger.Errorf("error returned from service: %s", err.Error())
+		h.logger.Errorf("error returned from service: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error returned from service: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
@@ -105,41 +103,39 @@ func (h *handler) getAllTransactions(w http.ResponseWriter, r *http.Request) {
 	}
 	response, err := json.Marshal(transactions)
 	if err != nil {
-		logger.Errorf("error marshaling transactions: %s", err.Error())
+		h.logger.Errorf("error marshaling transactions: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error marshaling transactions: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
 
 	if _, err := w.Write(response); err != nil {
-		logger.Errorf("error writing response: %s", err.Error())
+		h.logger.Errorf("error writing response: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error writing response: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
 }
 
 func (h *handler) getFilteredTransactions(w http.ResponseWriter, r *http.Request) {
-	logger := logging.GetLogger()
-	transactions := getFiltered(logger, h.transactionService, w, r)
+	transactions := getFiltered(h.logger, h.transactionService, w, r)
 	if transactions == nil {
 		return
 	}
 	response, err := json.Marshal(transactions)
 	if err != nil {
-		logger.Errorf("error marshaling transactions: %s", err.Error())
+		h.logger.Errorf("error marshaling transactions: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error marshaling transactions: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
 
 	if _, err := w.Write(response); err != nil {
-		logger.Errorf("error writing response: %s", err.Error())
+		h.logger.Errorf("error writing response: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error writing response: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
 }
 
 func (h *handler) getFilteredTransactionsReport(w http.ResponseWriter, r *http.Request) {
-	logger := logging.GetLogger()
-	transactions := getFiltered(logger, h.transactionService, w, r)
+	transactions := getFiltered(h.logger, h.transactionService, w, r)
 	if transactions == nil {
 		return
 	}
@@ -147,13 +143,13 @@ func (h *handler) getFilteredTransactionsReport(w http.ResponseWriter, r *http.R
 	var buf bytes.Buffer
 	writer := csv.NewWriter(&buf)
 	if err := writer.Write(csvHeaders); err != nil {
-		logger.Errorf("error writing headers to csv file: %s", err.Error())
+		h.logger.Errorf("error writing headers to csv file: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error writing headers to csv file: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}
 	for _, tran := range transactions {
 		if err := writer.Write(tran.toCsv()); err != nil {
-			logger.Errorf("error writing transaction to csv file: %s", err.Error())
+			h.logger.Errorf("error writing transaction to csv file: %s", err.Error())
 			http.Error(w, fmt.Sprintf("error writing transaction to csv file: %s", err.Error()), http.StatusInternalServerError)
 			return
 		}
@@ -164,7 +160,7 @@ func (h *handler) getFilteredTransactionsReport(w http.ResponseWriter, r *http.R
 	w.Header().Set("Content-Type", r.Header.Get("Content-Type"))
 
 	if _, err := io.Copy(w, &buf); err != nil {
-		logger.Errorf("error writing response: %s", err.Error())
+		h.logger.Errorf("error writing response: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error writing response: %s", err.Error()), http.StatusInternalServerError)
 		return
 	}

@@ -2,7 +2,8 @@ package wallet
 
 import (
 	"context"
-	"fmt"
+
+	"github.com/pkg/errors"
 
 	"github.com/skwol/wallet/pkg/clock"
 	"github.com/skwol/wallet/pkg/logging"
@@ -28,33 +29,32 @@ func NewService(storage Storage, logger logging.Logger, clk clock.Clock) (Servic
 
 func (s *service) Create(ctx context.Context, dto *CreateWalletDTO) (DTO, error) {
 	var result DTO
-	logger := logging.GetLogger()
 	dbWallet, err := s.storage.GetByName(ctx, dto.Name)
 	if err != nil {
-		logger.Errorf("error getting wallet from db: %s", err.Error())
-		return result, fmt.Errorf("error getting wallet from db: %w", err)
+		s.logger.Errorf("error getting wallet from db: %s", err.Error())
+		return result, errors.Wrap(err, "error getting wallet from db")
 	}
 	if dbWallet.ID != 0 {
-		logger.Errorf("wallet with name %s already exist", dto.Name)
-		return result, fmt.Errorf("wallet with name %s already exist", dto.Name)
+		s.logger.Errorf("wallet with name %s already exist", dto.Name)
+		return result, errors.Errorf("wallet with name %s already exist", dto.Name)
 	}
 	walletModel, err := newWallet(dto, s.clk.Now())
 	if err != nil {
-		logger.Errorf("error creating wallet model: %s", err.Error())
-		return result, fmt.Errorf("error creating wallet model: %w", err)
+		s.logger.Errorf("error creating wallet model: %s", err.Error())
+		return result, errors.Wrap(err, "error creating wallet model")
 	}
 	if walletModel == nil {
-		logger.Errorf("wallet model was not created")
-		return result, fmt.Errorf("wallet model was not created")
+		s.logger.Errorf("wallet model was not created")
+		return result, errors.Wrap(err, "wallet model was not created")
 	}
 	result, err = s.storage.Create(ctx, walletModel.toDTO())
 	if err != nil {
-		logger.Errorf("error creating wallet in db: %s", err.Error())
-		return result, fmt.Errorf("error creating wallet in db: %w", err)
+		s.logger.Errorf("error creating wallet in db: %s", err.Error())
+		return result, errors.Wrap(err, "error creating wallet in db")
 	}
 	if result.ID == 0 {
-		logger.Errorf("empty wallet returned from db")
-		return result, fmt.Errorf("empty wallet returned from db")
+		s.logger.Errorf("empty wallet returned from db")
+		return result, errors.Wrap(err, "empty wallet returned from db")
 	}
 	return result, nil
 }
@@ -73,28 +73,27 @@ func (s *service) GetAll(ctx context.Context, limit int, offset int) ([]DTO, err
 
 func (s *service) Update(ctx context.Context, id int64, walletDTO *UpdateWalletDTO) (DTO, error) {
 	var result DTO
-	logger := logging.GetLogger()
 
 	walletInDB, err := s.storage.GetByID(ctx, id)
 	if err != nil {
-		logger.Errorf("error getting wallet from db: %s", err.Error())
-		return result, fmt.Errorf("error getting wallet from db: %w", err)
+		s.logger.Errorf("error getting wallet from db: %s", err.Error())
+		return result, errors.Wrap(err, "error getting wallet from db")
 	}
 	if walletInDB.ID == 0 {
-		logger.Errorf("missing wallet in db")
-		return result, fmt.Errorf("missing wallet db")
+		s.logger.Errorf("missing wallet in db")
+		return result, errors.New("missing wallet db")
 	}
 	walletModel := walletInDB.toModel()
 	wallet, err := walletModel.Update(walletDTO, s.clk.Now())
 	if err != nil {
-		logger.Errorf("error updating wallet model: %s", err.Error())
-		return result, fmt.Errorf("error updating wallet model: %w", err)
+		s.logger.Errorf("error updating wallet model: %s", err.Error())
+		return result, errors.Wrap(err, "error updating wallet model")
 	}
 
 	result = wallet.toDTO()
 	if err := s.storage.Update(ctx, result); err != nil {
-		logger.Errorf("error updating wallet in db: %s", err.Error())
-		return result, fmt.Errorf("error updating wallet in db: %w", err)
+		s.logger.Errorf("error updating wallet in db: %s", err.Error())
+		return result, errors.Wrap(err, "error updating wallet in db")
 	}
 	return result, nil
 }

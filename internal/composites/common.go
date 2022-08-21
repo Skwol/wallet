@@ -1,7 +1,7 @@
 package composites
 
 import (
-	"fmt"
+	"github.com/pkg/errors"
 
 	"github.com/skwol/wallet/pkg/logging"
 
@@ -19,19 +19,19 @@ type CommonComposite struct {
 
 func NewCommonComposite(db *PgDBComposite, logger logging.Logger) (*CommonComposite, error) {
 	if db == nil {
-		return nil, fmt.Errorf("missing db composite")
+		return nil, errors.New("missing db composite")
 	}
 	storage, err := dbcommon.NewStorage(db.client, logger)
 	if err != nil {
-		return nil, fmt.Errorf("error creating common storage %w", err)
+		return nil, errors.Wrap(err, "error creating common storage")
 	}
 	service, err := domaincommon.NewService(storage, logger)
 	if err != nil {
-		return nil, fmt.Errorf("error creating common service %w", err)
+		return nil, errors.Wrap(err, "error creating common service")
 	}
 	handler, err := handlercommon.NewHandler(service, logger)
 	if err != nil {
-		return nil, fmt.Errorf("error creating common handler %w", err)
+		return nil, errors.Wrap(err, "error creating common handler")
 	}
 	return &CommonComposite{
 		Storage: storage,

@@ -3,9 +3,9 @@ package wallet
 import (
 	"context"
 	"database/sql"
-	"errors"
-	"fmt"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/skwol/wallet/pkg/client/pgdb"
 	"github.com/skwol/wallet/pkg/logging"
@@ -78,12 +78,12 @@ func (as *walletStorage) Create(ctx context.Context, dto wallet.DTO) (wallet.DTO
 		_, err = tx.ExecContext(ctx, "INSERT INTO transaction (sender_id, receiver_id, amount, date, tran_type) VALUES ($1, $1, $2, $3, $4);", dto.ID, tran.Amount, tran.Timestamp, tran.Type)
 		if err != nil {
 			rollback()
-			return dto, fmt.Errorf("error inserting transaction: %w", err)
+			return dto, errors.Wrap(err, "error inserting transaction")
 		}
 	}
 
 	if err := tx.Commit(); err != nil {
-		return dto, fmt.Errorf("error committing transction: %w", err)
+		return dto, errors.Wrap(err, "error committing transction")
 	}
 
 	return dto, nil
@@ -104,7 +104,7 @@ func (as *walletStorage) GetByID(ctx context.Context, id int64) (wallet.DTO, err
 func (as *walletStorage) GetByIDWithTransactions(ctx context.Context, id int64, limit int, offset int) (wallet.DTO, error) {
 	tx, err := as.db.Conn.BeginTx(ctx, nil)
 	if err != nil {
-		return wallet.DTO{}, fmt.Errorf("error beginning transaction: %w", err)
+		return wallet.DTO{}, errors.Wrap(err, "error beginning transaction")
 	}
 	query := `SELECT id, name, balance FROM wallet WHERE id = $1;`
 	row := as.db.Conn.QueryRowContext(ctx, query, id)
@@ -133,7 +133,7 @@ func (as *walletStorage) GetByIDWithTransactions(ctx context.Context, id int64, 
 	}
 
 	if err := tx.Commit(); err != nil {
-		return wallet.DTO{}, fmt.Errorf("error committing transction: %w", err)
+		return wallet.DTO{}, errors.Wrap(err, "error committing transction")
 	}
 	walletDTO := walletInDB.ToDTO()
 	walletDTO.Transactions = list
@@ -171,7 +171,7 @@ func (as *walletStorage) GetAll(ctx context.Context, limit int, offset int) ([]w
 func (as *walletStorage) Update(ctx context.Context, walletDTO wallet.DTO) error {
 	tx, err := as.db.Conn.BeginTx(ctx, nil)
 	if err != nil {
-		return fmt.Errorf("error beginning transaction: %w", err)
+		return errors.Wrap(err, "error beginning transaction")
 	}
 
 	rollback := func() {
@@ -183,19 +183,19 @@ func (as *walletStorage) Update(ctx context.Context, walletDTO wallet.DTO) error
 	_, err = tx.ExecContext(ctx, "UPDATE wallet SET name=$1, balance=$2 WHERE id=$3;", walletDTO.Name, walletDTO.Balance, walletDTO.ID)
 	if err != nil {
 		rollback()
-		return fmt.Errorf("error updating wallet: %w", err)
+		return errors.Wrap(err, "error updating wallet")
 	}
 
 	for _, tran := range walletDTO.TransactionsToApply {
 		_, err = tx.ExecContext(ctx, "INSERT INTO transaction (sender_id, receiver_id, amount, date, tran_type) VALUES ($1, $1, $2, $3, $4);", walletDTO.ID, tran.Amount, tran.Timestamp, tran.Type)
 		if err != nil {
 			rollback()
-			return fmt.Errorf("error inserting transaction: %w", err)
+			return errors.Wrap(err, "error inserting transaction")
 		}
 	}
 
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("error committing transction: %w", err)
+		return errors.Wrap(err, "error committing transction")
 	}
 
 	return nil

@@ -1,8 +1,17 @@
 package transfer
 
 import (
-	"fmt"
 	"time"
+
+	"github.com/pkg/errors"
+)
+
+var (
+	ErrMissingSender         = errors.New("missing sender")
+	ErrMissingReceiver       = errors.New("missing receiver")
+	ErrSameSenderAndReceiver = errors.New("sender and receiver is the same wallet")
+	ErrNonPositiveAmount     = errors.New("amount should be greater then 0")
+	ErrNotEnoughMoney        = errors.New("sender does not have enough 'money' for transfer")
 )
 
 type Transfer struct {
@@ -36,19 +45,9 @@ func (w *Wallet) toDTO() WalletDTO {
 }
 
 func createTransfer(dto *CreateTransferDTO, timestamp time.Time) (*Transfer, error) {
-	if dto.Receiver.ID == 0 || dto.Sender.ID == 0 {
-		return nil, fmt.Errorf("missing sender or receiver")
+	if err := dto.validate(); err != nil {
+		return nil, err
 	}
-	if dto.Receiver.ID == dto.Sender.ID {
-		return nil, fmt.Errorf("transfer can not be performed when sender and receiver is the same wallet")
-	}
-	if dto.Amount <= 0 {
-		return nil, fmt.Errorf("amount should be greater then 0")
-	}
-	if dto.Sender.Balance-dto.Amount < 0 {
-		return nil, fmt.Errorf("sender does not have enough 'money' for transfer")
-	}
-
 	dto.Sender.Balance -= dto.Amount
 	dto.Receiver.Balance += dto.Amount
 	dto.Timestamp = timestamp

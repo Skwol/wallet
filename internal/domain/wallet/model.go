@@ -1,15 +1,22 @@
 package wallet
 
 import (
-	"fmt"
 	"math"
 	"time"
+
+	"github.com/pkg/errors"
 )
 
 const (
 	TranTypeDeposit  TranType = "deposit"
 	TranTypeWithdraw TranType = "withdraw"
 	TranTypeTransfer TranType = "transfer"
+)
+
+var (
+	ErrNegativeBalance            = errors.New("balance can not be less then 0")
+	ErrMissingName                = errors.New("wallet must have a name")
+	ErrUpdateWithoutBalanceChange = errors.New("balance must be updated")
 )
 
 type TranType string
@@ -23,8 +30,8 @@ type Wallet struct {
 }
 
 func newWallet(dto *CreateWalletDTO, timestamp time.Time) (*Wallet, error) {
-	if dto.Balance < 0 {
-		return nil, fmt.Errorf("balance can not be less then zero")
+	if err := dto.validate(); err != nil {
+		return nil, err
 	}
 	var transactionsToApply []Transaction
 	if dto.Balance > 0 {
@@ -51,11 +58,11 @@ func (w Wallet) toDTO() DTO {
 }
 
 func (w *Wallet) Update(walletDTO *UpdateWalletDTO, timestamp time.Time) (*Wallet, error) {
-	if walletDTO.Balance < 0 {
-		return nil, fmt.Errorf("balance can not be less then 0")
+	if err := walletDTO.validate(); err != nil {
+		return nil, err
 	}
 	if walletDTO.Balance == w.Balance {
-		return nil, fmt.Errorf("balance should be updated")
+		return nil, ErrUpdateWithoutBalanceChange
 	}
 	var tType TranType
 	if walletDTO.Balance > w.Balance {

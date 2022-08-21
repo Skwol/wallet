@@ -1,7 +1,9 @@
 package composites
 
 import (
-	"fmt"
+	"github.com/pkg/errors"
+
+	"github.com/skwol/wallet/pkg/logging"
 
 	adapters "github.com/skwol/wallet/internal/adapters/api"
 	handlertransaction "github.com/skwol/wallet/internal/adapters/api/transaction"
@@ -15,21 +17,21 @@ type TransactionComposite struct {
 	Handler adapters.Handler
 }
 
-func NewTransactionComposite(db *PgDBComposite) (*TransactionComposite, error) {
+func NewTransactionComposite(db *PgDBComposite, logger logging.Logger) (*TransactionComposite, error) {
 	if db == nil {
-		return nil, fmt.Errorf("missing db composite")
+		return nil, errors.New("missing db composite")
 	}
-	storage, err := dbtransaction.NewStorage(db.client)
+	storage, err := dbtransaction.NewStorage(db.client, logger)
 	if err != nil {
-		return nil, fmt.Errorf("error creating transaction storage %w", err)
+		return nil, errors.Wrap(err, "error creating transaction storage")
 	}
-	service, err := domaintransaction.NewService(storage)
+	service, err := domaintransaction.NewService(storage, logger)
 	if err != nil {
-		return nil, fmt.Errorf("error creating transaction service %w", err)
+		return nil, errors.Wrap(err, "error creating transaction service")
 	}
-	handler, err := handlertransaction.NewHandler(service)
+	handler, err := handlertransaction.NewHandler(service, logger)
 	if err != nil {
-		return nil, fmt.Errorf("error creating transaction handler %w", err)
+		return nil, errors.Wrap(err, "error creating transaction handler")
 	}
 	return &TransactionComposite{
 		Storage: storage,

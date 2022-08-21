@@ -1,10 +1,11 @@
 package wallet
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/skwol/wallet/pkg/clock"
 )
@@ -31,14 +32,14 @@ func TestWallet_Update(t *testing.T) {
 			fields:  fields{ID: 1},
 			args:    args{wallet: &UpdateWalletDTO{CreateWalletDTO: CreateWalletDTO{Balance: -1}}},
 			want:    nil,
-			wantErr: fmt.Errorf("balance can not be less then 0"),
+			wantErr: errors.New("balance can not be less then 0"),
 		},
 		{
 			name:    "test balance should be updated",
 			fields:  fields{ID: 1, Balance: 10},
 			args:    args{wallet: &UpdateWalletDTO{CreateWalletDTO: CreateWalletDTO{Balance: 10}}},
 			want:    nil,
-			wantErr: fmt.Errorf("balance should be updated"),
+			wantErr: errors.New("balance should be updated"),
 		},
 		{
 			name:   "test OK set balance to zero",
@@ -94,7 +95,7 @@ func Test_newWallet(t *testing.T) {
 			name:    "test balance less then 0",
 			args:    args{&CreateWalletDTO{Balance: -1}},
 			want:    nil,
-			wantErr: fmt.Errorf("balance can not be less then zero"),
+			wantErr: errors.New("balance can not be less then zero"),
 		},
 		{
 			name:    "test ok",

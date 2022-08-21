@@ -25,6 +25,16 @@ type CreateWalletDTO struct {
 	Balance float64
 }
 
+func (d CreateWalletDTO) validate() error {
+	if d.Balance < 0 {
+		return ErrNegativeBalance
+	}
+	if d.Name == "" {
+		return ErrMissingName
+	}
+	return nil
+}
+
 type UpdateWalletDTO struct {
 	CreateWalletDTO
 }

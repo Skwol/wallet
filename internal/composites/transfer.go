@@ -1,7 +1,7 @@
 package composites
 
 import (
-	"fmt"
+	"github.com/pkg/errors"
 
 	"github.com/skwol/wallet/pkg/clock"
 	"github.com/skwol/wallet/pkg/logging"
@@ -20,19 +20,19 @@ type TransferComposite struct {
 
 func NewTransferComposite(db *PgDBComposite, logger logging.Logger, clk clock.Clock) (*TransferComposite, error) {
 	if db == nil {
-		return nil, fmt.Errorf("missing db composite")
+		return nil, errors.New("missing db composite")
 	}
 	storage, err := dbtransfer.NewStorage(db.client, logger)
 	if err != nil {
-		return nil, fmt.Errorf("error creating transaction storage %w", err)
+		return nil, errors.Wrap(err, "error creating transaction storage")
 	}
 	service, err := domaintransfer.NewService(storage, logger, clk)
 	if err != nil {
-		return nil, fmt.Errorf("error creating transaction service %w", err)
+		return nil, errors.Wrap(err, "error creating transaction service")
 	}
-	handler, err := handlertransfer.NewHandler(service)
+	handler, err := handlertransfer.NewHandler(service, logger)
 	if err != nil {
-		return nil, fmt.Errorf("error creating transaction handler %w", err)
+		return nil, errors.Wrap(err, "error creating transaction handler")
 	}
 	return &TransferComposite{
 		Storage: storage,

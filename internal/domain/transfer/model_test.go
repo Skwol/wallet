@@ -1,10 +1,11 @@
 package transfer
 
 import (
-	"fmt"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/pkg/errors"
 
 	"github.com/skwol/wallet/pkg/clock"
 )
@@ -24,37 +25,37 @@ func Test_createTransfer(t *testing.T) {
 			name:    "test missing sender",
 			args:    args{dto: &CreateTransferDTO{Amount: 100, Receiver: WalletDTO{ID: 1}}},
 			want:    nil,
-			wantErr: fmt.Errorf("missing sender or receiver"),
+			wantErr: errors.New("missing sender or receiver"),
 		},
 		{
 			name:    "test missing receiver",
 			args:    args{dto: &CreateTransferDTO{Amount: 100, Sender: WalletDTO{ID: 1}}},
 			want:    nil,
-			wantErr: fmt.Errorf("missing sender or receiver"),
+			wantErr: errors.New("missing sender or receiver"),
 		},
 		{
 			name:    "test missing amount",
 			args:    args{dto: &CreateTransferDTO{Receiver: WalletDTO{ID: 1}, Sender: WalletDTO{ID: 2}}},
 			want:    nil,
-			wantErr: fmt.Errorf("amount should be greater then 0"),
+			wantErr: errors.New("amount should be greater then 0"),
 		},
 		{
 			name:    "test negative amount",
 			args:    args{dto: &CreateTransferDTO{Amount: -1, Receiver: WalletDTO{ID: 1}, Sender: WalletDTO{ID: 2}}},
 			want:    nil,
-			wantErr: fmt.Errorf("amount should be greater then 0"),
+			wantErr: errors.New("amount should be greater then 0"),
 		},
 		{
 			name:    "test same sender and receiver",
 			args:    args{dto: &CreateTransferDTO{Amount: 100, Sender: WalletDTO{ID: 1}, Receiver: WalletDTO{ID: 1}}},
 			want:    nil,
-			wantErr: fmt.Errorf("transfer can not be performed when sender and receiver is the same wallet"),
+			wantErr: errors.New("transfer can not be performed when sender and receiver is the same wallet"),
 		},
 		{
 			name:    "test receiver does not have enough money",
 			args:    args{dto: &CreateTransferDTO{Amount: 100, Sender: WalletDTO{ID: 1}, Receiver: WalletDTO{ID: 2}}},
 			want:    nil,
-			wantErr: fmt.Errorf("sender does not have enough 'money' for transfer"),
+			wantErr: errors.New("sender does not have enough 'money' for transfer"),
 		},
 		{
 			name:    "test ok",

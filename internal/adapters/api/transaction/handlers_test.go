@@ -47,15 +47,15 @@ func setup(t *testing.T) {
 			t.Fatal("missing db client")
 		}
 
-		storage, err := dbtransaction.NewStorage(dbClient)
+		storage, err := dbtransaction.NewStorage(dbClient, logging.GetLogger())
 		if err != nil {
 			t.Fatalf("error creating transaction storage %s", err.Error())
 		}
-		service, err := domaintransaction.NewService(storage)
+		service, err := domaintransaction.NewService(storage, logging.GetLogger())
 		if err != nil {
 			t.Fatalf("error creating transaction service %s", err.Error())
 		}
-		handlerInterface, err := NewHandler(service)
+		handlerInterface, err := NewHandler(service, logging.GetLogger())
 		if err != nil {
 			t.Fatalf("error creating transaction handler %s", err.Error())
 		}

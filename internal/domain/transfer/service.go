@@ -2,7 +2,8 @@ package transfer
 
 import (
 	"context"
-	"fmt"
+
+	"github.com/pkg/errors"
 
 	"github.com/skwol/wallet/pkg/clock"
 	"github.com/skwol/wallet/pkg/logging"
@@ -26,21 +27,21 @@ func (s *service) Create(ctx context.Context, dto *CreateTransferDTO) (DTO, erro
 	walletSender, err := s.storage.GetWallet(ctx, dto.Sender.ID)
 	if err != nil {
 		s.logger.Errorf("error getting sender wallet from db: %s", err.Error())
-		return DTO{}, fmt.Errorf("error getting sender wallet from db: %w", err)
+		return DTO{}, errors.Wrap(err, "error getting sender wallet from db")
 	}
 	if walletSender.ID == 0 {
 		s.logger.Errorf("missing sender wallet in db")
-		return DTO{}, fmt.Errorf("missing sender wallet in db")
+		return DTO{}, errors.New("missing sender wallet in db")
 	}
 
 	walletReceiver, err := s.storage.GetWallet(ctx, dto.Receiver.ID)
 	if err != nil {
 		s.logger.Errorf("error getting receiver wallet from db: %s", err.Error())
-		return DTO{}, fmt.Errorf("error getting receiver wallet from db: %w", err)
+		return DTO{}, errors.Wrap(err, "error getting receiver wallet from db")
 	}
 	if walletReceiver.ID == 0 {
 		s.logger.Errorf("missing receiver wallet in db")
-		return DTO{}, fmt.Errorf("missing receiver wallet in db")
+		return DTO{}, errors.New("missing receiver wallet in db")
 	}
 	dto.Sender = walletSender
 	dto.Receiver = walletReceiver
@@ -48,20 +49,20 @@ func (s *service) Create(ctx context.Context, dto *CreateTransferDTO) (DTO, erro
 	transferModel, err := createTransfer(dto, s.clk.Now())
 	if err != nil {
 		s.logger.Errorf("error creating transfer model: %s", err.Error())
-		return DTO{}, fmt.Errorf("error creating transfer model: %w", err)
+		return DTO{}, errors.Wrap(err, "error creating transfer model")
 	}
 	if transferModel == nil {
 		s.logger.Errorf("transfer model was not created")
-		return DTO{}, fmt.Errorf("transfer model was not created")
+		return DTO{}, errors.New("transfer model was not created")
 	}
 	result, err := s.storage.Create(ctx, &transferModel.toDTO().CreateTransferDTO)
 	if err != nil {
 		s.logger.Errorf("error creating transfer in db: %s", err.Error())
-		return DTO{}, fmt.Errorf("error creating wallet in db: %w", err)
+		return DTO{}, errors.Wrap(err, "error creating wallet in db")
 	}
 	if result.ID == 0 {
 		s.logger.Errorf("empty transfer returned from db")
-		return DTO{}, fmt.Errorf("empty transfer returned from db")
+		return DTO{}, errors.New("empty transfer returned from db")
 	}
 	return result, nil
 }

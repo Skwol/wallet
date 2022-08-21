@@ -56,7 +56,7 @@ func setup(t *testing.T) {
 		if err != nil {
 			t.Fatalf("error creating transfer service %s", err.Error())
 		}
-		handlerInterface, err := NewHandler(service)
+		handlerInterface, err := NewHandler(service, logging.GetLogger())
 		if err != nil {
 			t.Fatalf("error creating transfer handler %s", err.Error())
 		}

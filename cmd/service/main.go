@@ -47,7 +47,7 @@ func main() {
 	}
 
 	logger.Info("create transaction composite")
-	transactionComposite, err := composites.NewTransactionComposite(db)
+	transactionComposite, err := composites.NewTransactionComposite(db, logger)
 	if err != nil {
 		logger.Fatal("transaction composite failed:", err.Error())
 	}

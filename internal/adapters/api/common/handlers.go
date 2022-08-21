@@ -35,12 +35,11 @@ func (h *handler) Register(router *mux.Router) {
 }
 
 func (h *handler) generateFakeData(w http.ResponseWriter, r *http.Request) {
-	logger := logging.GetLogger()
 	ctx := r.Context()
 
 	numberOfRecordsToCreate, err := strconv.Atoi(r.FormValue("records"))
 	if err != nil {
-		logger.Errorf("error parsing records query param: %s", err.Error())
+		h.logger.Errorf("error parsing records query param: %s", err.Error())
 		http.Error(w, fmt.Sprintf("error parsing records query param: %s", err.Error()), http.StatusUnprocessableEntity)
 		return
 	}
@@ -52,7 +51,7 @@ func (h *handler) generateFakeData(w http.ResponseWriter, r *http.Request) {
 
 	go func() {
 		if err := h.service.GenerateFakeData(ctx, numberOfRecordsToCreate); err != nil {
-			logger.Errorf("error during generating data: %s", err.Error())
+			h.logger.Errorf("error during generating data: %s", err.Error())
 			return
 		}
 	}()

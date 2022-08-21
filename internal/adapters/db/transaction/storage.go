@@ -5,8 +5,10 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/skwol/wallet/internal/domain/transaction"
 	"github.com/skwol/wallet/pkg/client/pgdb"
+	"github.com/skwol/wallet/pkg/logging"
+
+	"github.com/skwol/wallet/internal/domain/transaction"
 )
 
 type dbTransaction struct {
@@ -30,11 +32,12 @@ func (db dbTransaction) ToDTO() transaction.DTO {
 }
 
 type transactionStorage struct {
-	db *pgdb.PGDB
+	db     *pgdb.PGDB
+	logger logging.Logger
 }
 
-func NewStorage(db *pgdb.PGDB) (transaction.Storage, error) {
-	return &transactionStorage{db: db}, nil
+func NewStorage(db *pgdb.PGDB, logger logging.Logger) (transaction.Storage, error) {
+	return &transactionStorage{db: db, logger: logger}, nil
 }
 
 func (as *transactionStorage) GetByID(ctx context.Context, id int64) (transaction.DTO, error) {
